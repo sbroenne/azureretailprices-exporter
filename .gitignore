@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+azure_cache.sqlite
+
+# Export files
+*.csv
+*.xlsx
+
