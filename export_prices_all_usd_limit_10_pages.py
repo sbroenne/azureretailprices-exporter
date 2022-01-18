@@ -1,4 +1,4 @@
-import lib.azureapi as azureapi
+import api.azureapi as azureapi
 
 # Exports Azure Retail Prices in USD - limits to 10 pages. Useful for developing/debugging
 

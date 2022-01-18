@@ -1,5 +1,5 @@
-import lib.azureapi as azureapi
-import lib.flatten as flatten
+import api.azureapi as azureapi
+import api.flatten as flatten
 
 # Exports Azure Retail Prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR -  and flatten the results
 

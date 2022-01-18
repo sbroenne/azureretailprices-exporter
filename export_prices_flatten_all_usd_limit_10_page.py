@@ -1,5 +1,5 @@
-import lib.azureapi as azureapi
-import lib.flatten as flatten
+import api.azureapi as azureapi
+import api.flatten as flatten
 
 # Exports Azure Retail Prices in USD and flatten the results - limits to 10 pages. Useful for developing/debugging
 

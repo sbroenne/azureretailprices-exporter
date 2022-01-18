@@ -1,4 +1,4 @@
-import lib.azureapi as azureapi
+import api.azureapi as azureapi
 
 # Exports Azure Retail Prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR
 
