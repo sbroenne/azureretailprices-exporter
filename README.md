@@ -1,14 +1,16 @@
-# azureretailprices-exporter
+# 1. azureretailprices-exporter
 
-Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) as **JSON** and saves them as **CSV**.
+Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) as **JSON** and convert them to **CSV**.
 
-## Functionality
+## 1.1. Functionality
 
 A **thin wrapper** that simply retrieves the results from the REST API, supports *API response pagination* and converts the results into csv files.
 
+Includes functionality to convert this into a flattened prices list (prices rows -> prices columns) and an Excel/PowerQuery sample.
+
 It assumes that you are familiar with the actual [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) (e.g. setting filter parameters).
 
-## Usage
+## 1.2. Prerequisites
 
 The script requires the following pre-requisites to be installed:
 
@@ -26,28 +28,49 @@ Install the pre-requisites.
 pipenv install
 ```
 
-**Example:** This will export all Azure Products in USD.
+## 1.3. Usage
+
+Following are some examples how to this script.
+
+### 1.3.1. Export all Azure Products in USD
 
 ```console
 pipenv run python export_prices_all_usd.py
 ```
 
-**Example:** This exports prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters.
+This creates the [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.csv
+
+### 1.3.2. Export all Azure Products in USD and **flattens** the price list. 
+
+This makes it much easier to consume the list in Excel and Power BI.
+
+```console
+pipenv run python export_prices_flatten_all_usd.py
+```
+
+This creates two output files:
+
+- [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.csv
+- [Flattened version of the export](prices_flattened_USD.csv)-file: prices_flattened_USD.csv
+
+You then can use the [sample Excel file](xlsx/retail_prices_flatten.xlsx) to load the [flattened version of the export](prices_flattened_USD.csv) via PowerQuery into Excel.
+
+### 1.3.3. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters
 
 ```console
 pipenv run python export_prices_with_filter_and_multiple_currencies.py
 ```
 
-## Code Layout
+## 1.4. Code Layout
 
-API functionality is encapsulated in [azureapi.py](azureapi.py). The **export_*.py** scripts are just examples how to use this functionality.
+All functionality is encapsulated in [lib/azureapi.py](lib/azureapi.py) and [lib/flatten.py](lib/flatten.py). The **export_*.py** scripts are just examples how to use this functionality.
 
-## Caching
+## 1.5. Caching
 
 The script uses [requests_cache](https://pypi.org/project/requests-cache) to temporarily cache API results for one day. This is very useful if the script stops unexpectedly and you need to resume later on.
 
 Cache data is stored in the file [azure_cache.sqlite](azure_cache.sqlite). Deleting this file will clear the cache.
 
-## Error Handling
+## 1.6. Error Handling
 
 There is none. If you run into issue please check if the actual [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) works with the filters you have specified.
