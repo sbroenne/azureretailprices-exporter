@@ -8,6 +8,6 @@ currency_list = ["USD"]
 
 ## Loop through the currencies
 for currency_code in currency_list:
-    export_file, export_df = azureapi.get_prices(currency_code, max_pages=10)
+    export_file, export_df = azureapi.get_prices(currency_code)
     flattened_price_list = flatten.flatten_prices(currency_code, export_df)
     
