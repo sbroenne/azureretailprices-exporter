@@ -17,33 +17,33 @@ def get_prices(currency_code: str, filter: str = "", max_pages: int = 9999999):
     Returns:
         [str]: Name of the exported file
         [pd.DataFrame]: Retails prices as a Pandas Dataframe
-        
     """
 
     # Use requests_cache to temporarily cache results for one day
     # Useful if the script stops unexpectedly and you need to resume
-    session = requests_cache.CachedSession('azure_cache', expire_after=timedelta(days=1))
+    session = requests_cache.CachedSession('azure_cache',
+                                           expire_after=timedelta(days=1))
 
     # Construct the base API url
     api_url = f"https://prices.azure.com/api/retail/prices?currencyCode='{currency_code}'"
-    
+
     # Add optional filter argument
     if len(filter) > 0:
         api_url = f"{api_url}&{filter}"
-    
-    sku_list =[]
+
+    sku_list = []
 
     next_page_link = api_url
 
     print(f"Starting export for API call: {api_url}")
     page_counter = 0
-    
+
     counter = enlighten.Counter(desc='Exported results:', unit='pages')
 
     # Loop through the result pages
     while next_page_link is not None and page_counter < max_pages:
 
-        page_counter = page_counter +1
+        page_counter = page_counter + 1
 
         # Get the next page
         api_request = session.get(next_page_link)
@@ -57,8 +57,8 @@ def get_prices(currency_code: str, filter: str = "", max_pages: int = 9999999):
         counter.update()
 
     print(f"Completed export of {page_counter} result pages")
-    print(f"Loading data into pandas")
-    
+    print("Loading data into pandas")
+
     # Convert the list into a pandas df
     export_df = pd.DataFrame.from_records(sku_list)
 
