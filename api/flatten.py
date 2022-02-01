@@ -133,10 +133,4 @@ def flatten_prices(currency_code: str, export_df: pd.DataFrame):
         export_df[col_name] = nn.NaN
         export_df[f"{col_name} savings"] = nn.NaN
 
-    # Export flattened file
-    export_file = f"prices_flattened_{currency_code}.csv"
-    print(f"Exporting prices to {export_file}")
-    export_df.to_csv(export_file, index=False)
-    print(f"Exported flattened prices to {export_file}")
-
-    return export_file
+    return export_df

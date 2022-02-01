@@ -6,7 +6,7 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
 
 A **thin wrapper** that simply retrieves the results from the REST API, supports *API response pagination* and converts the results into csv files.
 
-Includes functionality to convert this into a flattened prices list (prices rows -> prices columns) and an Excel/PowerQuery sample.
+Includes functionality to convert this into a flattened prices list (converting prices rows into prices columns) and an Excel/PowerQuery sample.
 
 It assumes that you are familiar with the actual [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) (e.g. setting filter parameters).
 
@@ -40,7 +40,7 @@ pipenv run python export_prices_all_usd.py
 
 This creates the [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.csv
 
-### 1.3.2. Export all Azure Products in USD and **flattens** the price list. 
+### 1.3.2. Export all Azure Products in USD and **flattens** the price list
 
 This makes it much easier to consume the list in Excel and Power BI.
 
