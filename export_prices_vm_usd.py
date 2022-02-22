@@ -8,11 +8,9 @@ currency_list = ["USD"]
 # Filter
 filter = "$filter=serviceName eq 'Virtual Machines'"
 
-max_pages = 9999
-
 ## Loop through the currencies
 for currency_code in currency_list:
-    export_df = azureapi.get_prices(currency_code, filter, max_pages)
+    export_df = azureapi.get_prices(currency_code, filter)
     # Export to CSV - this is much faster than creating an xlsx file and can just as easily be imported into Excel
     export_file = f"prices_{currency_code}.json"
     print(f"Exporting prices to {export_file}")

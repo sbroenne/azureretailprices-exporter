@@ -4,9 +4,9 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
 
 ## 1.1. Functionality
 
-A **thin wrapper** that simply retrieves the results from the REST API, supports *API response pagination* and converts the results into csv files.
+A **thin wrapper** that simply retrieves the results from the REST API, supports _API response pagination_ and converts the results into csv files.
 
-Includes functionality to convert this into a flattened prices list (converting prices rows into prices columns) and an Excel/PowerQuery sample.
+Includes functionality to convert this into a flattened prices list (converting prices rows into prices columns).
 
 It assumes that you are familiar with the actual [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) (e.g. setting filter parameters).
 
@@ -48,12 +48,7 @@ This makes it much easier to consume the list in Excel and Power BI.
 pipenv run python export_prices_flatten_all_usd.py
 ```
 
-This creates two output files:
-
-- [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.csv
-- [Flattened version of the export](prices_flattened_USD.csv)-file: prices_flattened_USD.csv
-
-You then can use the [sample Excel file](xlsx/retail_prices_flatten.xlsx) to load the [flattened version of the export](prices_flattened_USD.csv) via PowerQuery into Excel.
+This creates the [flattened version of the export](prices_flattened_USD.csv)-file: prices_flattened_USD.csv
 
 ### 1.3.3. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters
 
@@ -63,7 +58,7 @@ pipenv run python export_prices_with_filter_and_multiple_currencies.py
 
 ## 1.4. Code Layout
 
-All functionality is encapsulated in [lib/azureapi.py](lib/azureapi.py) and [lib/flatten.py](lib/flatten.py). The **export_*.py** scripts are just examples how to use this functionality.
+All functionality is encapsulated in [lib/azureapi.py](lib/azureapi.py) and [lib/flatten.py](lib/flatten.py). The **export\_\*.py** scripts are just examples how to use this functionality.
 
 ## 1.5. Caching
 
