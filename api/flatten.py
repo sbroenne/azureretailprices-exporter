@@ -1,16 +1,16 @@
 """ Flatten retails price list(prices rows -> prices columns)
 """
 
-import pandas as pd
 import numpy as nn
+import pandas as pd
 
 
-def flatten_prices(currency_code: str, export_df: pd.DataFrame):
+def flatten_prices(export_df: pd.DataFrame):
     """Flatten retails price list(prices rows -> prices columns)
 
     Args:
         currency_code (str): Price currency
-        export_df (pd.DataFrame): Retails prices as a Pandas Dataframe
+        export_df (pd.DataFrame): Retails prices as a Pandas data frame
 
     Returns:
         [str]: Name of the exported file
@@ -87,8 +87,7 @@ def flatten_prices(currency_code: str, export_df: pd.DataFrame):
     )
 
     # Filter out lines where we do not have a Consumption price
-    # Only two line items in China who only have DevTestConsumption
-    # are affected by this
+    # Only two line items in China who only have DevTestConsumption are affected by this
     # Otherwise, we might get division by zero errors for the savings columns
 
     export_df = export_df.loc[export_df["Consumption"] > 0]

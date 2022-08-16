@@ -1,35 +1,39 @@
 """ Azure Retail Prices API
 """
-import requests_cache
-import pandas as pd
 from datetime import timedelta
+
 import enlighten
+import pandas as pd
+import requests_cache
 
 
-def get_prices(currency_code: str, filter: str = "", max_pages: int = 9999999):
-    """ Download prices from the Azure API
+def get_prices(currency_code: str, results_filter: str = "", max_pages: int = 9999999):
+    """Download prices from the Azure API
 
     Args:
         currency_code (str): Price currency
-        filter (str, optional): Filter results string. Defaults to "". [Examples](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
+        results_filter (str, optional): Filter results string. Defaults to "". [Examples](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
         max_pages (int, optional): Only download max_pages of results - only really useful for debugging.  Defaults to 9999999.
 
     Returns:
         [str]: Name of the exported file
-        [pd.DataFrame]: Retails prices as a Pandas Dataframe
+        [pd.DataFrame]: Retails prices as a Pandas data frame
     """
 
     # Use requests_cache to temporarily cache results for one day
     # Useful if the script stops unexpectedly and you need to resume
-    session = requests_cache.CachedSession('azure_cache',
-                                           expire_after=timedelta(days=1))
+    session = requests_cache.CachedSession(
+        "azure_cache", expire_after=timedelta(days=1)
+    )
 
     # Construct the base API url
-    api_url = f"https://prices.azure.com/api/retail/prices?currencyCode='{currency_code}'"
+    api_url = (
+        f"https://prices.azure.com/api/retail/prices?currencyCode='{currency_code}'"
+    )
 
     # Add optional filter argument
-    if len(filter) > 0:
-        api_url = f"{api_url}&{filter}"
+    if len(results_filter) > 0:
+        api_url = f"{api_url}&{results_filter}"
 
     sku_list = []
 
@@ -38,7 +42,7 @@ def get_prices(currency_code: str, filter: str = "", max_pages: int = 9999999):
     print(f"Starting export for API call: {api_url}")
     page_counter = 0
 
-    counter = enlighten.Counter(desc='Exported results:', unit='pages')
+    counter = enlighten.Counter(desc="Exported results:", unit="pages")
 
     # Loop through the result pages
     while next_page_link is not None and page_counter < max_pages:

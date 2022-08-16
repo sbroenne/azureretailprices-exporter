@@ -1,14 +1,25 @@
 # 1. azureretailprices-exporter
 
-Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) as **JSON** and convert them to **CSV**.
+Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) as **JSON** and convert them to **CSV** if needed.
+
+- [1. azureretailprices-exporter](#1-azureretailprices-exporter)
+  - [1.1. Functionality](#11-functionality)
+  - [1.2. Prerequisites](#12-prerequisites)
+  - [1.3. Usage](#13-usage)
+    - [1.3.1. Export all Azure Products in USD](#131-export-all-azure-products-in-usd)
+    - [1.3.2. Export all Azure Products in USD and **flattens** the price list](#132-export-all-azure-products-in-usd-and-flattens-the-price-list)
+    - [1.3.3. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters](#133-export-prices-for-virtual-machines-hbsv2-series-virtual-machines-in-usd-and-eur-and-highlights-the-usage-of-api-filters)
+  - [1.4. Code Layout](#14-code-layout)
+  - [1.5. Caching](#15-caching)
+  - [1.6. Error Handling](#16-error-handling)
 
 ## 1.1. Functionality
 
-A **thin wrapper** that simply retrieves the results from the REST API, supports _API response pagination_ and converts the results into csv files.
+A set of **Python scripts** that simply retrieves the results from the REST API, supports _API response pagination_ and optionally converts the results into csv files.
 
 Includes functionality to convert this into a flattened prices list (converting prices rows into prices columns).
 
-It assumes that you are familiar with the actual [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) (e.g. setting filter parameters).
+It assumes that you are familiar with the [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) itself (e.g. setting filter parameters).
 
 ## 1.2. Prerequisites
 
@@ -18,7 +29,15 @@ The script requires the following pre-requisites to be installed:
 - [requests_cache](https://pypi.org/project/requests-cache/) (caching requests to the API for a limited amount of time)
 - [enlighten](https://pypi.org/project/enlighten/) (status bar)
 
-Either install them via **pip** or preferably use a virtual environment (**Pipenv**). I have only tested the code on Python 3.9.
+Either install them via **pip** or preferably use a virtual environment (**Pipenv**). I have only tested the code on Python 3.10.
+
+Python **without** Pipenv
+
+```console
+pip install pandas
+pip install requests-cache
+pip install enlighten
+```
 
 In case you use **Pipenv**:
 
@@ -35,7 +54,7 @@ Following are some examples how to this script.
 ### 1.3.1. Export all Azure Products in USD
 
 ```console
-pipenv run python export_prices_all_usd.py
+python export_prices_all_usd.py
 ```
 
 This creates the [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.csv
@@ -45,7 +64,7 @@ This creates the [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.c
 This makes it much easier to consume the list in Excel and Power BI.
 
 ```console
-pipenv run python export_prices_flatten_all_usd.py
+python export_prices_flatten_all_usd.py
 ```
 
 This creates the [flattened version of the export](prices_flattened_USD.csv)-file: prices_flattened_USD.csv
@@ -53,7 +72,7 @@ This creates the [flattened version of the export](prices_flattened_USD.csv)-fil
 ### 1.3.3. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters
 
 ```console
-pipenv run python export_prices_with_filter_and_multiple_currencies.py
+python export_prices_with_filter_and_multiple_currencies.py
 ```
 
 ## 1.4. Code Layout
