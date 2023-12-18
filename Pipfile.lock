@@ -131,11 +131,11 @@
         },
         "enlighten": {
             "hashes": [
-                "sha256:57abd98a3d3f83484ef9f91f9255f4d23c8b3097ecdb647c7b9b0049d600b7f8",
-                "sha256:e825eb534ca80778bb7d46e5581527b2a6fae559b6cf09e290a7952c6e11961e"
+                "sha256:8c7703187926ef67b90eab5ae1a7925377aacd46fea361ac14ef14ad7d2d9e54",
+                "sha256:d257f89508b4202c23faec4145f0cc7b57558248017e917f674b18284f09eaa3"
             ],
             "index": "pypi",
-            "version": "==1.11.1"
+            "version": "==1.12.3"
         },
         "idna": {
             "hashes": [
@@ -284,10 +284,10 @@
         },
         "wcwidth": {
             "hashes": [
-                "sha256:795b138f6875577cd91bba52baf9e445cd5118fd32723b460e30a0af30ea230e",
-                "sha256:a5220780a404dbe3353789870978e472cfe477761f06ee55077256e509b156d0"
+                "sha256:f01c104efdf57971bcb756f054dd58ddec5204dd15fa31d6503ea57947d97c02",
+                "sha256:f26ec43d96c8cbfed76a5075dac87680124fa84e0855195a6184da9c187f133c"
             ],
-            "version": "==0.2.6"
+            "version": "==0.2.12"
         }
     },
     "develop": {
