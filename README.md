@@ -7,8 +7,7 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
   - [1.2. Prerequisites](#12-prerequisites)
   - [1.3. Usage](#13-usage)
     - [1.3.1. Export all Azure Products in USD](#131-export-all-azure-products-in-usd)
-    - [1.3.2. Export all Azure Products in USD and **flattens** the price list](#132-export-all-azure-products-in-usd-and-flattens-the-price-list)
-    - [1.3.3. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters](#133-export-prices-for-virtual-machines-hbsv2-series-virtual-machines-in-usd-and-eur-and-highlights-the-usage-of-api-filters)
+    - [1.3.2. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters](#132-export-prices-for-virtual-machines-hbsv2-series-virtual-machines-in-usd-and-eur-and-highlights-the-usage-of-api-filters)
   - [1.4. Code Layout](#14-code-layout)
   - [1.5. Caching](#15-caching)
   - [1.6. Error Handling](#16-error-handling)
@@ -17,9 +16,7 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
 
 A set of **Python scripts** that simply retrieves the results from the REST API, supports _API response pagination_ and optionally converts the results into csv files.
 
-Includes functionality to convert this into a flattened prices list (converting prices rows into prices columns).
-
-It assumes that you are familiar with the [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) itself (e.g. setting filter parameters).
+It assumes that you are familiar with the [Azure API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) itself (e.g. setting filter parameters). It uses the Preview API in order to retriev savingsPlans prices.
 
 ## 1.2. Prerequisites
 
@@ -59,17 +56,7 @@ python export_prices_all_usd.py
 
 This creates the [Azure Retail Prices Export](prices_USD.csv)-file: prices_USD.csv
 
-### 1.3.2. Export all Azure Products in USD and **flattens** the price list
-
-This makes it much easier to consume the list in Excel and Power BI.
-
-```console
-python export_prices_flatten_all_usd.py
-```
-
-This creates the [flattened version of the export](prices_flattened_USD.csv)-file: prices_flattened_USD.csv
-
-### 1.3.3. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters
+### 1.3.2. Export prices for Virtual Machines HBSv2 Series Virtual Machines in USD and EUR and highlights the usage of API filters
 
 ```console
 python export_prices_with_filter_and_multiple_currencies.py

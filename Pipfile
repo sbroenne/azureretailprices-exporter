@@ -7,10 +7,10 @@ name = "pypi"
 pandas = "*"
 requests-cache = "*"
 enlighten = "*"
+pyarrow = "*"
 
 [dev-packages]
-rope = "*"
-pylint = "*"
+pytest = "*"
 
 [requires]
 python_version = "*"
