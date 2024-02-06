@@ -8,12 +8,13 @@ pandas = "*"
 requests-cache = "*"
 enlighten = "*"
 pyarrow = "*"
+requests = "*"
+certifi = "*"
+urllib3 = "*"
+numpy = "*"
 
 [dev-packages]
 pytest = "*"
 
 [requires]
-python_version = "*"
-
-[pipenv]
-allow_prereleases = true
+python_version = ">=3.10"
