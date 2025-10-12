@@ -70,20 +70,56 @@ jobs:
             f.write(f'EXPORT_COUNT={len(export_df)}\n')
         "
 
+    - name: Export FX rates
+      run: |
+        poetry run python -c "
+        import api.azureapi as azureapi
+        import os
+        
+        # Calculate and export FX rates
+        print('Starting FX rate calculation...')
+        
+        # List of common currencies available in Azure Retail Prices API
+        target_currencies = [
+            'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR',
+            'BRL', 'KRW', 'SEK', 'NOK', 'DKK', 'NZD', 'RUB', 'ZAR'
+        ]
+        
+        fx_df = azureapi.calculate_fx_rates(
+            base_currency='USD',
+            target_currencies=target_currencies
+        )
+        
+        # Use consistent filename for FX rates
+        fx_filename = 'azure-fxrates-usd.csv'
+        
+        # Export to CSV
+        fx_df.to_csv(fx_filename, index=False)
+        print(f'Exported {len(fx_df)} FX rates to {fx_filename}')
+        
+        # Set output for GitHub Actions
+        with open(os.environ['GITHUB_ENV'], 'a') as f:
+            f.write(f'FX_FILENAME={fx_filename}\n')
+            f.write(f'FX_COUNT={len(fx_df)}\n')
+        "
+
     - name: Upload CSV as artifact
       uses: actions/upload-artifact@v4
       with:
         name: azure-prices-${{ steps.date.outputs.date }}
-        path: ${{ env.FILENAME }}
+        path: |
+          ${{ env.FILENAME }}
+          ${{ env.FX_FILENAME }}
         retention-days: 90
 
     - name: Create Dated Release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Create dated release with the CSV file
+        # Create dated release with both CSV files
         gh release create "prices-${{ steps.date.outputs.date }}" \
           "${{ env.FILENAME }}" \
+          "${{ env.FX_FILENAME }}" \
           --title "Azure Retail Prices - ${{ steps.date.outputs.date }}" \
           --notes "## Azure Retail Prices Export - ${{ steps.date.outputs.date }}
           
@@ -91,17 +127,20 @@ jobs:
         - 📅 **Date**: ${{ steps.date.outputs.date }}
         - 💰 **Currency**: USD
         - 📊 **Total Records**: ${{ env.EXPORT_COUNT }}
+        - 💱 **FX Rates**: ${{ env.FX_COUNT }} currencies
         - 🕐 **Generated**: Run #${{ github.run_number }}
         
-        **File Available:**
-        - **\`${{ env.FILENAME }}\`** - Historical snapshot for this date
+        **Files Available:**
+        - **\`${{ env.FILENAME }}\`** - Historical price snapshot for this date
+        - **\`${{ env.FX_FILENAME }}\`** - FX rates calculated from USD
         
         **Download:**
-        This CSV file contains Azure retail prices in USD format for ${{ steps.date.outputs.date }}, suitable for:
+        These CSV files contain Azure retail prices in USD format and calculated FX rates for ${{ steps.date.outputs.date }}, suitable for:
         - Cost analysis and planning
         - Price comparison studies  
         - Business intelligence and reporting
         - Academic research
+        - Currency conversion and multi-currency reporting
         
         **File Format:** CSV with headers
         **Update Frequency:** Daily (automated)
@@ -115,9 +154,10 @@ jobs:
         # Delete existing latest release if it exists
         gh release delete latest --yes 2>/dev/null || echo "No existing latest release found"
         
-        # Create new latest release with the CSV file
+        # Create new latest release with both CSV files
         gh release create "latest" \
           "${{ env.FILENAME }}" \
+          "${{ env.FX_FILENAME }}" \
           --title "Azure Retail Prices - Latest" \
           --notes "## Azure Retail Prices - Latest Export
           
@@ -125,22 +165,25 @@ jobs:
         - 📅 **Last Updated**: ${{ steps.date.outputs.date }}
         - 💰 **Currency**: USD
         - 📊 **Total Records**: ${{ env.EXPORT_COUNT }}
+        - 💱 **FX Rates**: ${{ env.FX_COUNT }} currencies
         - 🕐 **Generated**: Run #${{ github.run_number }}
         
-        **File Available:**
+        **Files Available:**
         - **\`${{ env.FILENAME }}\`** - Always contains the most current prices (updated daily)
+        - **\`${{ env.FX_FILENAME }}\`** - FX rates calculated from USD (updated daily)
         
         **Download:**
-        This CSV file contains the most current Azure retail prices in USD format, suitable for:
+        These CSV files contain the most current Azure retail prices in USD format and calculated FX rates, suitable for:
         - Cost analysis and planning
         - Price comparison studies  
         - Business intelligence and reporting
         - Academic research
+        - Currency conversion and multi-currency reporting
         
         **File Format:** CSV with headers
         **Update Frequency:** Daily (automated)
         
-        > � **Auto-Updated**: This release is automatically overwritten daily with fresh pricing data.
+        > 🔄 **Auto-Updated**: This release is automatically overwritten daily with fresh pricing data.
         > 
         > 📚 **Historical Data**: Check [all releases](https://github.com/${{ github.repository }}/releases) for dated historical exports.
         > 
@@ -150,13 +193,17 @@ jobs:
       run: |
         echo "## 🎉 Azure Prices Export Complete!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- **File**: \`${{ env.FILENAME }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Price File**: \`${{ env.FILENAME }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Records**: ${{ env.EXPORT_COUNT }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **FX Rate File**: \`${{ env.FX_FILENAME }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **FX Rates**: ${{ env.FX_COUNT }} currencies" >> $GITHUB_STEP_SUMMARY
         echo "- **Dated Release**: [prices-${{ steps.date.outputs.date }}](https://github.com/${{ github.repository }}/releases/tag/prices-${{ steps.date.outputs.date }})" >> $GITHUB_STEP_SUMMARY
         echo "- **Latest Release**: [latest](https://github.com/${{ github.repository }}/releases/tag/latest)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "✅ Both releases are now available for public download!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "🔗 **Direct Downloads**:" >> $GITHUB_STEP_SUMMARY
-        echo "- [📅 Dated CSV](https://github.com/${{ github.repository }}/releases/download/prices-${{ steps.date.outputs.date }}/${{ env.FILENAME }}) - Historical snapshot for ${{ steps.date.outputs.date }}" >> $GITHUB_STEP_SUMMARY
-        echo "- [🔄 Latest CSV](https://github.com/${{ github.repository }}/releases/download/latest/${{ env.FILENAME }}) - Always current prices (auto-updated)" >> $GITHUB_STEP_SUMMARY
+        echo "- [📅 Dated Prices CSV](https://github.com/${{ github.repository }}/releases/download/prices-${{ steps.date.outputs.date }}/${{ env.FILENAME }}) - Historical snapshot for ${{ steps.date.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+        echo "- [📅 Dated FX Rates CSV](https://github.com/${{ github.repository }}/releases/download/prices-${{ steps.date.outputs.date }}/${{ env.FX_FILENAME }}) - FX rates for ${{ steps.date.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔄 Latest Prices CSV](https://github.com/${{ github.repository }}/releases/download/latest/${{ env.FILENAME }}) - Always current prices (auto-updated)" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔄 Latest FX Rates CSV](https://github.com/${{ github.repository }}/releases/download/latest/${{ env.FX_FILENAME }}) - Always current FX rates (auto-updated)" >> $GITHUB_STEP_SUMMARY
