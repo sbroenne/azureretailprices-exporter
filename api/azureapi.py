@@ -157,7 +157,8 @@ def calculate_fx_rates(
 
     This function fetches prices in multiple currencies and calculates exchange rates
     by comparing the same product prices across currencies. The base currency (default USD)
-    is used as the reference.
+    is used as the reference. Since FX rates are the same across all products, only the
+    first matched product is used for calculation.
 
     Args:
         base_currency (str, optional): Base currency for FX rates. Defaults to "USD".
@@ -167,7 +168,7 @@ def calculate_fx_rates(
         max_pages (int, optional): Only download max_pages of results. Defaults to 9999999.
 
     Returns:
-        pd.DataFrame: DataFrame with columns: currency, fxRate, sampleSize, productSample
+        pd.DataFrame: DataFrame with columns: currency, fxRate, productSample
     """
     if target_currencies is None:
         # Default list of common currencies
@@ -190,9 +191,7 @@ def calculate_fx_rates(
     # Check if we have data
     if len(base_df) == 0:
         logger.warning("No prices found for base currency %s", base_currency)
-        return pd.DataFrame(
-            columns=["currency", "fxRate", "sampleSize", "productSample"]
-        )
+        return pd.DataFrame(columns=["currency", "fxRate", "productSample"])
 
     # Use a unique key to match products across currencies
     # We'll use a combination of fields that should uniquely identify a product
@@ -247,31 +246,26 @@ def calculate_fx_rates(
                 ]
 
                 if len(valid_df) > 0:
-                    # Calculate FX rate: target currency price / base currency price
-                    fx_rates = (
-                        valid_df["retailPrice_target"] / valid_df["retailPrice_base"]
+                    # Use first matched product - FX rates are the same across all products
+                    first_row = valid_df.iloc[0]
+                    fx_rate = (
+                        first_row["retailPrice_target"] / first_row["retailPrice_base"]
                     )
-
-                    # Calculate median FX rate (more robust than mean)
-                    median_fx_rate = fx_rates.median()
-
-                    # Get a sample product name for reference
-                    sample_product = valid_df.iloc[0]["productName_base"]
+                    sample_product = first_row["productName_base"]
 
                     fx_results.append(
                         {
                             "currency": target_currency,
-                            "fxRate": median_fx_rate,
-                            "sampleSize": len(valid_df),
+                            "fxRate": fx_rate,
                             "productSample": sample_product,
                         }
                     )
 
                     logger.info(
-                        "Calculated FX rate for %s: %.4f (based on %d products)",
+                        "Calculated FX rate for %s: %.4f (using %s)",
                         target_currency,
-                        median_fx_rate,
-                        len(valid_df),
+                        fx_rate,
+                        sample_product,
                     )
                 else:
                     logger.warning(
