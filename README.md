@@ -11,10 +11,11 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
 
 **Want the latest Azure prices without running the code?**
 
-📥 **[Download Latest CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest)** - All Azure retail prices in USD, updated daily!
+📥 **[Download Latest CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest)** - All Azure retail prices in USD + FX rates, updated daily!
 
 - ✅ **Automated daily exports** at 6 AM UTC
 - ✅ **Complete price data** for all Azure services
+- ✅ **FX rates** calculated from USD to 16+ currencies
 - ✅ **CSV format** ready for Excel, Power BI, or analysis tools
 - ✅ **Public access** - no authentication required
 - ✅ **Two release types available**:
@@ -66,6 +67,7 @@ The project includes both **manual export scripts** for custom use cases and **a
 **Key Features:**
 
 - 🚀 **Automated Daily Exports** - Fresh price data available as GitHub releases
+- 💱 **FX Rate Calculation** - Exchange rates calculated from multi-currency price comparisons
 - ✅ **Modern Python 3.10+** - Type hints, structured logging, comprehensive error handling
 - ✅ **Robust API integration** - Handles pagination, timeouts, and graceful error recovery
 - ✅ **Smart caching** - Resumes interrupted exports, 1-day API response caching
@@ -153,6 +155,38 @@ poetry run python export_prices_with_filter_and_multiple_currencies.py
 - `export_prices_vm_usd.py` - Virtual Machines only in USD
 - `export_prices_with_filter_and_multiple_currencies.py` - Custom filters with multiple currencies
 - `export_prices_all_usd_limit_10_pages.py` - Limited export for testing
+- `export_fxrates.py` - **NEW**: Calculate and export FX rates based on USD
+
+### Export FX Rates
+
+The `export_fxrates.py` script calculates foreign exchange rates by comparing Azure retail prices across different currencies:
+
+```console
+poetry run python export_fxrates.py
+```
+
+This creates the file `fxrates_usd.csv` with calculated exchange rates for multiple currencies.
+
+**How it works:**
+- Fetches Azure prices in USD (base currency) and multiple target currencies
+- Matches identical products across currencies using unique identifiers
+- Calculates FX rates by comparing prices for the same products
+- Uses median FX rate across all matched products for accuracy
+- Exports results with currency, rate, sample size, and example product
+
+**Example output:**
+```
+currency,fxRate,sampleSize,productSample
+EUR,0.8523,12543,Virtual Machines Dv3 Series
+GBP,0.7421,12543,Virtual Machines Dv3 Series
+JPY,110.2341,12543,Virtual Machines Dv3 Series
+```
+
+This is useful for:
+- Multi-currency cost analysis
+- Currency conversion validation
+- Historical FX rate tracking
+- Budget planning in different regions
 
 ## Configuration
 
@@ -332,7 +366,9 @@ Each export creates **two separate releases**:
 
 #### 📅 **Dated Releases** (e.g., `prices-2025-10-12`)
 
-- **File**: `azure-retail-prices-usd.csv`
+- **Files**: 
+  - `azure-retail-prices-usd.csv` - Complete price data
+  - `azure-fxrates-usd.csv` - FX rates calculated from USD
 - **Purpose**: Permanent historical snapshot for that specific date
 - **Use Case**: Historical analysis, trend tracking, archival data
 - **URL Pattern**: `https://github.com/sbroenne/azureretailprices-exporter/releases/tag/prices-YYYY-MM-DD`
@@ -340,8 +376,10 @@ Each export creates **two separate releases**:
 
 #### 🔄 **Latest Release** (`latest`)
 
-- **File**: `azure-retail-prices-usd.csv` (same filename, always current data)
-- **Purpose**: Always contains the most current pricing data
+- **Files**: 
+  - `azure-retail-prices-usd.csv` - Current price data
+  - `azure-fxrates-usd.csv` - Current FX rates
+- **Purpose**: Always contains the most current pricing data and FX rates
 - **Use Case**: Real-time analysis, automation, current pricing needs
 - **URL Pattern**: `https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest`
 - **Permanence**: Updated daily with fresh data (previous data is overwritten)
@@ -350,15 +388,21 @@ Each export creates **two separate releases**:
 
 For **automation** and **consistent access**, use these direct download links:
 
+**Price Data:**
 - **📅 Historical Data**: `https://github.com/sbroenne/azureretailprices-exporter/releases/download/prices-YYYY-MM-DD/azure-retail-prices-usd.csv`
 - **🔄 Latest Data**: `https://github.com/sbroenne/azureretailprices-exporter/releases/download/latest/azure-retail-prices-usd.csv`
 
-> 💡 **Pro Tip**: Bookmark the **latest** URL for always-current pricing data!
+**FX Rates:**
+- **📅 Historical FX Rates**: `https://github.com/sbroenne/azureretailprices-exporter/releases/download/prices-YYYY-MM-DD/azure-fxrates-usd.csv`
+- **🔄 Latest FX Rates**: `https://github.com/sbroenne/azureretailprices-exporter/releases/download/latest/azure-fxrates-usd.csv`
+
+> 💡 **Pro Tip**: Bookmark the **latest** URLs for always-current pricing data and FX rates!
 
 ### 🎯 **Use Cases**
 
 - **📊 Business Intelligence**: Import into Power BI, Tableau, or Excel
 - **💰 Cost Planning**: Current pricing for budget forecasting
+- **💱 Multi-Currency Analysis**: FX rates for international cost comparisons
 - **📈 Price Analysis**: Historical trends and price changes over time
 - **🤖 Automation**: Reliable data source for automated workflows
 - **🔬 Research**: Academic studies on cloud pricing trends
