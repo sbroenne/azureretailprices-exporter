@@ -343,6 +343,10 @@ Before marking work as complete, verify:
 6. ❌ Don't commit commented-out code
 7. ❌ Don't make breaking changes without discussion
 8. ❌ Don't ignore error handling for external calls
+9. ❌ Don't commit generated files (check `.gitignore`)
+10. ❌ Don't commit cache files (`azure_cache.sqlite`)
+11. ❌ Don't commit CSV export files (unless they're test fixtures)
+12. ❌ Don't commit virtual environment files (`.venv/`, `venv/`)
 
 ## Task Prioritization
 
@@ -398,6 +402,24 @@ git add .                           # Stage changes
 git commit -m "descriptive message" # Commit changes
 git push                            # Push to remote
 ```
+
+## GitHub Copilot Features to Use
+
+When working with this repository, leverage these Copilot features:
+
+### In Pull Requests
+- Use `/tests` to generate test cases for new functionality
+- Use `/fix` to address review feedback and failing tests
+- Use `/review` to get code review suggestions before submitting
+
+### In Issues
+- Use `/plan` to break down complex tasks into steps
+- Ask clarifying questions in comments to better understand requirements
+
+### In Code Editor (VS Code)
+- Use inline suggestions for implementing functions following project patterns
+- Use chat to ask questions about the codebase structure
+- Use "Explain this code" for understanding existing implementations
 
 ---
 
