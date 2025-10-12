@@ -168,9 +168,9 @@ poetry run python export_fxrates.py
 This creates the file `fxrates_usd.csv` with calculated exchange rates for multiple currencies.
 
 **How it works:**
-- Fetches Azure prices in USD (base currency) and multiple target currencies
-- Matches identical products across currencies using unique identifiers
-- Calculates FX rates by comparing prices (since FX rates are the same across all products, uses the first matched product)
+- Uses a specific meterId (`5daea80f-04ac-5385-86f0-b263d23becd2`) to ensure consistent price comparison across currencies
+- Fetches Azure prices in USD (base currency) and multiple target currencies for this specific meter
+- Calculates FX rates by comparing the same product's price in different currencies
 - Exports results with currency and exchange rate
 
 **Example output:**
