@@ -11,15 +11,15 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
 
 **Want the latest Azure prices without running the code?**
 
-📥 **[Download Today's CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/latest)** - All Azure retail prices in USD, updated daily!
+📥 **[Download Latest CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest)** - All Azure retail prices in USD, updated daily!
 
 - ✅ **Automated daily exports** at 6 AM UTC
 - ✅ **Complete price data** for all Azure services
 - ✅ **CSV format** ready for Excel, Power BI, or analysis tools
 - ✅ **Public access** - no authentication required
-- ✅ **Two file formats available**:
-  - 📅 **Dated files** (`azure-retail-prices-usd-YYYY-MM-DD.csv`) - For historical tracking
-  - 🔄 **Latest file** (`azure-retail-prices-usd_latest.csv`) - Always contains current prices
+- ✅ **Two release types available**:
+  - 📅 **Dated releases** (e.g., `prices-2025-10-12`) - Historical snapshots for specific dates
+  - 🔄 **Latest release** (`latest`) - Always contains the most current prices (auto-updated daily)
 
 *Perfect for business analysis, cost planning, or research without needing to run the export scripts yourself!*
 
@@ -43,7 +43,19 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
     - [Adding Dependencies](#adding-dependencies)
     - [Code Quality](#code-quality)
   - [Continuous Integration](#continuous-integration)
+    - [🧪 **Automated Testing**](#-automated-testing)
+    - [🔍 **Code Quality Enforcement**](#-code-quality-enforcement)
+    - [🔒 **Security Scanning**](#-security-scanning)
+    - [📊 **Status Badges**](#-status-badges)
+    - [🔧 **Contributing Requirements**](#-contributing-requirements)
   - [Automated Exports](#automated-exports)
+    - [🔄 **How It Works**](#-how-it-works)
+    - [📁 **Release Types Available**](#-release-types-available)
+      - [📅 **Dated Releases** (e.g., `prices-2025-10-12`)](#-dated-releases-eg-prices-2025-10-12)
+      - [🔄 **Latest Release** (`latest`)](#-latest-release-latest)
+    - [🎯 **Download URLs**](#-download-urls)
+    - [🎯 **Use Cases**](#-use-cases)
+    - [🌟 **Benefits**](#-benefits)
 
 ## Functionality
 
@@ -314,19 +326,34 @@ This project includes **fully automated daily exports** that make Azure pricing 
 - **Fresh Data**: Always pulls the latest pricing from Azure's official API
 - **Public Access**: Results are published as GitHub releases for easy download
 
-### 📁 **File Formats Available**
+### 📁 **Release Types Available**
 
-Each export produces **two files**:
+Each export creates **two separate releases**:
 
-1. **📅 Date-stamped file** (`azure-retail-prices-usd-2025-10-12.csv`)
-   - Permanent archive of pricing for that specific date
-   - Perfect for historical analysis and trend tracking
-   - Never overwritten - each day gets its own file
+#### 📅 **Dated Releases** (e.g., `prices-2025-10-12`)
 
-2. **🔄 Latest file** (`azure-retail-prices-usd_latest.csv`)
-   - Always contains the most current pricing data
-   - Consistent filename for automation and bookmarking
-   - Updated with fresh data on every export run
+- **File**: `azure-retail-prices-usd.csv`
+- **Purpose**: Permanent historical snapshot for that specific date
+- **Use Case**: Historical analysis, trend tracking, archival data
+- **URL Pattern**: `https://github.com/sbroenne/azureretailprices-exporter/releases/tag/prices-YYYY-MM-DD`
+- **Permanence**: Never overwritten - each day gets its own release
+
+#### 🔄 **Latest Release** (`latest`)
+
+- **File**: `azure-retail-prices-usd.csv` (same filename, always current data)
+- **Purpose**: Always contains the most current pricing data
+- **Use Case**: Real-time analysis, automation, current pricing needs
+- **URL Pattern**: `https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest`
+- **Permanence**: Updated daily with fresh data (previous data is overwritten)
+
+### 🎯 **Download URLs**
+
+For **automation** and **consistent access**, use these direct download links:
+
+- **📅 Historical Data**: `https://github.com/sbroenne/azureretailprices-exporter/releases/download/prices-YYYY-MM-DD/azure-retail-prices-usd.csv`
+- **🔄 Latest Data**: `https://github.com/sbroenne/azureretailprices-exporter/releases/download/latest/azure-retail-prices-usd.csv`
+
+> 💡 **Pro Tip**: Bookmark the **latest** URL for always-current pricing data!
 
 ### 🎯 **Use Cases**
 
@@ -339,9 +366,10 @@ Each export produces **two files**:
 ### 🌟 **Benefits**
 
 - ✅ **No setup required** - Just download and use
-- ✅ **Always current** - Fresh data daily
+- ✅ **Always current** - Fresh data daily via the `latest` release
+- ✅ **Historical access** - Dated releases for trend analysis
 - ✅ **Production ready** - Reliable, tested automation
 - ✅ **Community resource** - Open to everyone
-- ✅ **Multiple formats** - Choose what works for your needs
+- ✅ **Simple URLs** - Consistent naming for automation
 
-> 💡 **Quick Start**: Visit the [releases page](https://github.com/sbroenne/azureretailprices-exporter/releases) and download the latest CSV file!
+> 💡 **Quick Start**: Visit the [releases page](https://github.com/sbroenne/azureretailprices-exporter/releases) and download from either the **latest** release or any **dated** release!
