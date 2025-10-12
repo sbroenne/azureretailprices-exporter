@@ -182,3 +182,68 @@ def test_retry_configuration():
     # Verify reasonable defaults
     assert azureapi.MAX_RETRIES > 0
     assert azureapi.RETRY_BACKOFF_FACTOR > 0
+
+
+def test_calculate_fx_rates_with_filter():
+    """Test FX rate calculation with a meterId filter"""
+    # Create mock data for USD with a specific meterId
+    meter_id = "5daea80f-04ac-5385-86f0-b263d23becd2"
+
+    usd_data = pd.DataFrame(
+        {
+            "armSkuName": ["SKU1"],
+            "armRegionName": ["eastus"],
+            "meterId": [meter_id],
+            "retailPrice": [10.0],
+            "productName": ["Product 1"],
+        }
+    )
+
+    # Create mock data for EUR (with 0.85 exchange rate)
+    eur_data = pd.DataFrame(
+        {
+            "armSkuName": ["SKU1"],
+            "armRegionName": ["eastus"],
+            "meterId": [meter_id],
+            "retailPrice": [8.5],
+            "productName": ["Product 1"],
+        }
+    )
+
+    # Mock the get_prices function
+    def mock_get_prices(currency_code, results_filter="", max_pages=9999999):
+        # Verify that the filter is passed correctly
+        if results_filter:
+            assert meter_id in results_filter
+            assert "$filter=meterId eq" in results_filter
+
+        if currency_code == "USD":
+            return usd_data.copy()
+        elif currency_code == "EUR":
+            return eur_data.copy()
+        else:
+            return pd.DataFrame()
+
+    # Temporarily replace the function
+    original_get_prices = azureapi.get_prices
+    azureapi.get_prices = mock_get_prices
+
+    try:
+        # Test the FX rate calculation with filter
+        fx_df = azureapi.calculate_fx_rates(
+            base_currency="USD",
+            target_currencies=["EUR"],
+            results_filter=f"$filter=meterId eq '{meter_id}'",
+            max_pages=1,
+        )
+
+        # Verify the result
+        assert isinstance(fx_df, pd.DataFrame)
+        assert len(fx_df) == 1
+        assert fx_df.iloc[0]["currency"] == "EUR"
+        # FX rate should be 0.85 (8.5 / 10.0)
+        assert abs(fx_df.iloc[0]["fxRate"] - 0.85) < 0.01
+
+    finally:
+        # Restore the original function
+        azureapi.get_prices = original_get_prices
