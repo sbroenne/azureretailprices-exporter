@@ -191,7 +191,7 @@ def calculate_fx_rates(
     # Check if we have data
     if len(base_df) == 0:
         logger.warning("No prices found for base currency %s", base_currency)
-        return pd.DataFrame(columns=["currency", "fxRate"])
+        return pd.DataFrame({"currency": [], "fxRate": []})
 
     # Use a unique key to match products across currencies
     # We'll use a combination of fields that should uniquely identify a product
