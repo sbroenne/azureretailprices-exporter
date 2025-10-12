@@ -131,8 +131,5 @@ azure_cache.sqlite
 
 # Export files
 *.csv
-*.json
 *.br
 *.gz
-#VS Code
-.vscode/

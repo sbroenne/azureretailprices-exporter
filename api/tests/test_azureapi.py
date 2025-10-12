@@ -1,8 +1,8 @@
-""" Unit tests for azureapi.py
-"""
+"""Unit tests for azureapi.py"""
+
+import pandas as pd
 
 from api import azureapi
-import pandas as pd
 
 # Currency cod to use
 currency_code = "USD"

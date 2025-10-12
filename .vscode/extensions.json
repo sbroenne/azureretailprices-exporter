@@ -1,0 +1,27 @@
+{
+    "recommendations": [
+        // Essential Python Development
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-pylance",
+        
+        // Code Quality & Formatting
+        "charliermarsh.ruff",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        
+        // Testing
+        "ms-python.pytest",
+        
+        // Git & Version Control
+        "GitHub.vscode-pull-request-github",
+        
+        // JSON & Configuration Files
+        "vscode.json-language-features",
+        "redhat.vscode-yaml",
+       
+        // Markdown (for README editing)
+        "yzhang.markdown-all-in-one",
+        "DavidAnson.vscode-markdownlint"
+    ]
+}
