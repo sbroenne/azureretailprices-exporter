@@ -171,14 +171,14 @@ This creates the file `fxrates_usd.csv` with calculated exchange rates for multi
 - Fetches Azure prices in USD (base currency) and multiple target currencies
 - Matches identical products across currencies using unique identifiers
 - Calculates FX rates by comparing prices (since FX rates are the same across all products, uses the first matched product)
-- Exports results with currency, rate, and example product
+- Exports results with currency and exchange rate
 
 **Example output:**
 ```
-currency,fxRate,productSample
-EUR,0.8523,Virtual Machines Dv3 Series
-GBP,0.7421,Virtual Machines Dv3 Series
-JPY,110.2341,Virtual Machines Dv3 Series
+currency,fxRate
+EUR,0.8523
+GBP,0.7421
+JPY,110.2341
 ```
 
 This is useful for:

@@ -88,9 +88,10 @@ def test_calculate_fx_rates_with_mock_data():
         assert fx_df.iloc[0]["currency"] == "EUR"
         # FX rate should be 0.85 (first product: 8.5 / 10.0)
         assert abs(fx_df.iloc[0]["fxRate"] - 0.85) < 0.01
-        # Should not have sampleSize field anymore
+        # Should only have currency and fxRate fields
         assert "sampleSize" not in fx_df.columns
-        assert "productSample" in fx_df.columns
+        assert "productSample" not in fx_df.columns
+        assert list(fx_df.columns) == ["currency", "fxRate"]
 
     finally:
         # Restore the original function

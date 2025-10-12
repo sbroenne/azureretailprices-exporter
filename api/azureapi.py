@@ -168,7 +168,7 @@ def calculate_fx_rates(
         max_pages (int, optional): Only download max_pages of results. Defaults to 9999999.
 
     Returns:
-        pd.DataFrame: DataFrame with columns: currency, fxRate, productSample
+        pd.DataFrame: DataFrame with columns: currency, fxRate
     """
     if target_currencies is None:
         # Default list of common currencies
@@ -191,7 +191,7 @@ def calculate_fx_rates(
     # Check if we have data
     if len(base_df) == 0:
         logger.warning("No prices found for base currency %s", base_currency)
-        return pd.DataFrame(columns=["currency", "fxRate", "productSample"])
+        return pd.DataFrame(columns=["currency", "fxRate"])
 
     # Use a unique key to match products across currencies
     # We'll use a combination of fields that should uniquely identify a product
@@ -251,21 +251,18 @@ def calculate_fx_rates(
                     fx_rate = (
                         first_row["retailPrice_target"] / first_row["retailPrice_base"]
                     )
-                    sample_product = first_row["productName_base"]
 
                     fx_results.append(
                         {
                             "currency": target_currency,
                             "fxRate": fx_rate,
-                            "productSample": sample_product,
                         }
                     )
 
                     logger.info(
-                        "Calculated FX rate for %s: %.4f (using %s)",
+                        "Calculated FX rate for %s: %.4f",
                         target_currency,
                         fx_rate,
-                        sample_product,
                     )
                 else:
                     logger.warning(
