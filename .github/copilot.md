@@ -1,5 +1,7 @@
 # GitHub Copilot Instructions for azureretailprices-exporter
 
+> 📚 **For Copilot Coding Agent**: This file contains instructions for GitHub Copilot when working on this repository. Follow these guidelines to ensure high-quality contributions that align with project standards.
+
 ## Project Overview
 
 This is a **modern Python project** that retrieves Azure Retail Prices from the official REST API, supports API response pagination, and converts results to JSON and CSV formats with automated daily exports.
@@ -9,6 +11,14 @@ This is a **modern Python project** that retrieves Azure Retail Prices from the 
 - Production-ready with comprehensive testing, linting, and CI/CD
 - Developer-friendly with VS Code integration and Poetry dependency management
 - Automated daily price exports via GitHub Actions
+
+### What You Should Know
+
+- This project values **code quality** and **maintainability** over speed of delivery
+- All changes require **comprehensive testing** and must pass **CI/CD checks**
+- **Documentation** should be updated alongside code changes
+- **Type safety** is important - use type hints for all new code
+- The project follows **Python best practices** and modern conventions
 
 ## Code Style and Quality Standards
 
@@ -255,3 +265,140 @@ poetry run pytest api/tests/test_azureapi.py  # Run specific test file
 - **Pagination** - Handle large result sets efficiently
 - **Progress bars** - Use enlighten for long-running operations
 - **Data processing** - Use pandas and pyarrow for efficient data manipulation
+
+## Workflow Guidance for Copilot
+
+### When Working on Issues
+
+1. **Understand the task fully** - Read the issue description and all comments before starting
+2. **Ask clarifying questions** - If requirements are unclear, ask for clarification in comments
+3. **Start small** - Begin with simpler changes and build incrementally
+4. **Break down complex tasks** - For large features, suggest breaking into smaller sub-issues
+
+### Pull Request Best Practices
+
+1. **Keep PRs focused** - One logical change per PR
+2. **Write clear descriptions** - Explain what changed and why
+3. **Reference related issues** - Use "Fixes #123" or "Relates to #456" syntax
+4. **Ensure all CI checks pass** - Don't submit until tests, linting, and formatting pass
+5. **Self-review your changes** - Check the diff before submitting
+6. **Respond to feedback promptly** - Address review comments in a timely manner
+
+### Types of Changes
+
+#### Bug Fixes
+- Write or update tests that reproduce the bug
+- Fix the minimal code needed to resolve the issue
+- Verify the fix doesn't break existing functionality
+- Update documentation if the bug was in documented behavior
+
+#### New Features
+- Discuss the approach before implementing (in issue comments)
+- Write tests for all new functionality
+- Update documentation and examples
+- Consider backward compatibility
+- Ensure performance impact is acceptable
+
+#### Documentation Updates
+- Keep technical accuracy as top priority
+- Maintain consistent formatting and style
+- Update code examples to match current API
+- Check for broken links or outdated references
+
+#### Refactoring
+- Ensure behavior doesn't change (unless fixing bugs)
+- Maintain or improve test coverage
+- Update related documentation
+- Use linting and type checking to catch issues
+
+### Verification Steps Before Submitting
+
+Before marking work as complete, verify:
+
+1. ✅ All tests pass: `poetry run pytest`
+2. ✅ Code is properly formatted: `poetry run black --check .`
+3. ✅ No linting issues: `poetry run ruff check .`
+4. ✅ Type checking passes (if applicable): `poetry run pyright`
+5. ✅ Manual testing completed for changed functionality
+6. ✅ Documentation updated (if needed)
+7. ✅ No unintended changes (review git diff)
+8. ✅ Commit messages are clear and descriptive
+
+### Communication Guidelines
+
+- **Be professional and respectful** in all communications
+- **Provide context** when asking questions or requesting reviews
+- **Acknowledge feedback** even if you disagree (explain your reasoning)
+- **Update issue comments** to keep stakeholders informed of progress
+- **Report blockers early** if you encounter obstacles
+- **Thank reviewers** for their time and feedback
+
+### Common Pitfalls to Avoid
+
+1. ❌ Don't modify unrelated code or files
+2. ❌ Don't skip writing tests for new code
+3. ❌ Don't ignore linting or formatting warnings
+4. ❌ Don't hardcode values that should be configurable
+5. ❌ Don't use print() statements for logging
+6. ❌ Don't commit commented-out code
+7. ❌ Don't make breaking changes without discussion
+8. ❌ Don't ignore error handling for external calls
+
+## Task Prioritization
+
+When working on multiple issues or feedback items:
+
+1. **Critical bugs** - Fix immediately
+2. **CI/CD failures** - Address before new features
+3. **Security vulnerabilities** - Take precedence over features
+4. **Review feedback** - Respond before starting new work
+5. **New features** - Work on after stability and quality issues resolved
+6. **Optimizations** - Consider only when performance issues are documented
+
+## Quick Reference - Essential Commands
+
+### Setup and Installation
+```bash
+poetry install                     # Install all dependencies
+poetry shell                       # Activate virtual environment
+```
+
+### Running Tests and Quality Checks
+```bash
+# Run all quality checks (do this before submitting PR)
+poetry run pytest                  # Tests
+poetry run black --check .         # Formatting check
+poetry run ruff check .            # Linting check
+poetry run pyright                 # Type checking (optional)
+
+# Auto-fix issues
+poetry run black .                 # Format code
+poetry run ruff check --fix .      # Fix auto-fixable linting issues
+```
+
+### Running Export Scripts
+```bash
+poetry run python export_prices_all_usd.py
+poetry run python export_prices_vm_usd.py
+```
+
+### Managing Dependencies
+```bash
+poetry add package-name              # Add production dependency
+poetry add --group dev package-name  # Add development dependency
+poetry update                        # Update dependencies
+poetry show                          # List installed packages
+```
+
+### Git Workflow
+```bash
+git status                          # Check status
+git diff                            # See changes
+git add .                           # Stage changes
+git commit -m "descriptive message" # Commit changes
+git push                            # Push to remote
+```
+
+---
+
+**Remember**: The goal is to write **clean, tested, and maintainable code** that follows project conventions. When in doubt, check existing code in `api/azureapi.py` for examples, or ask for clarification!
