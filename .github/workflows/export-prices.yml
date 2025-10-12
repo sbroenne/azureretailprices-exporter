@@ -1,4 +1,4 @@
-name: "Export Azure Prices"
+name: "Export Azure Retail API Prices"
 
 on:
   schedule:
