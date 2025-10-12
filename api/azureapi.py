@@ -145,3 +145,138 @@ def get_prices(
     output_df = pd.DataFrame.from_records(output_records)
     logger.info("Created %d price items", output_df.shape[0])
     return output_df
+
+
+def calculate_fx_rates(
+    base_currency: str = "USD",
+    target_currencies: list[str] | None = None,
+    results_filter: str = "",
+    max_pages: int = 9999999,
+) -> pd.DataFrame:
+    """Calculate FX rates by comparing prices across currencies.
+
+    This function fetches prices in multiple currencies and calculates exchange rates
+    by comparing the same product prices across currencies. The base currency (default USD)
+    is used as the reference. Since FX rates are the same across all products, only the
+    first matched product is used for calculation.
+
+    Args:
+        base_currency (str, optional): Base currency for FX rates. Defaults to "USD".
+        target_currencies (list[str] | None, optional): List of target currencies to compare.
+            If None, uses a default list of common currencies.
+        results_filter (str, optional): Filter results string. Defaults to "".
+        max_pages (int, optional): Only download max_pages of results. Defaults to 9999999.
+
+    Returns:
+        pd.DataFrame: DataFrame with columns: currency, fxRate
+    """
+    if target_currencies is None:
+        # Default list of common currencies
+        target_currencies = ["EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR"]
+
+    logger.info(
+        "Calculating FX rates from %s to %s",
+        base_currency,
+        ", ".join(target_currencies),
+    )
+
+    # Get base currency prices
+    logger.info("Fetching %s prices...", base_currency)
+    base_df = get_prices(
+        currency_code=base_currency,
+        results_filter=results_filter,
+        max_pages=max_pages,
+    )
+
+    # Check if we have data
+    if len(base_df) == 0:
+        logger.warning("No prices found for base currency %s", base_currency)
+        return pd.DataFrame({"currency": [], "fxRate": []})
+
+    # Use a unique key to match products across currencies
+    # We'll use a combination of fields that should uniquely identify a product
+    base_df["matchKey"] = (
+        base_df["armSkuName"].astype(str)
+        + "|"
+        + base_df["armRegionName"].astype(str)
+        + "|"
+        + base_df["meterId"].astype(str)
+    )
+
+    fx_results: list[dict[str, Any]] = []
+
+    for target_currency in target_currencies:
+        try:
+            logger.info("Fetching %s prices...", target_currency)
+            target_df = get_prices(
+                currency_code=target_currency,
+                results_filter=results_filter,
+                max_pages=max_pages,
+            )
+
+            # Check if we have data for target currency
+            if len(target_df) == 0:
+                logger.warning("No prices found for currency %s", target_currency)
+                continue
+
+            # Create match key for target currency
+            target_df["matchKey"] = (
+                target_df["armSkuName"].astype(str)
+                + "|"
+                + target_df["armRegionName"].astype(str)
+                + "|"
+                + target_df["meterId"].astype(str)
+            )
+
+            # Merge on the match key to find common products
+            merged_df = base_df.merge(
+                target_df,
+                on="matchKey",
+                suffixes=("_base", "_target"),
+                how="inner",
+            )
+
+            if len(merged_df) > 0:
+                # Filter out records where either price is zero or null
+                valid_df = merged_df[
+                    (merged_df["retailPrice_base"] > 0)
+                    & (merged_df["retailPrice_target"] > 0)
+                    & (merged_df["retailPrice_base"].notna())
+                    & (merged_df["retailPrice_target"].notna())
+                ]
+
+                if len(valid_df) > 0:
+                    # Use first matched product - FX rates are the same across all products
+                    first_row = valid_df.iloc[0]
+                    fx_rate = (
+                        first_row["retailPrice_target"] / first_row["retailPrice_base"]
+                    )
+
+                    fx_results.append(
+                        {
+                            "currency": target_currency,
+                            "fxRate": fx_rate,
+                        }
+                    )
+
+                    logger.info(
+                        "Calculated FX rate for %s: %.4f",
+                        target_currency,
+                        fx_rate,
+                    )
+                else:
+                    logger.warning(
+                        "No valid price comparisons found for %s", target_currency
+                    )
+            else:
+                logger.warning("No matching products found for %s", target_currency)
+
+        except Exception as e:
+            logger.error("Failed to calculate FX rate for %s: %s", target_currency, e)
+            continue
+
+    # Create DataFrame from results
+    fx_df = pd.DataFrame.from_records(fx_results)
+    logger.info("Calculated FX rates for %d currencies", len(fx_df))
+
+    return fx_df
