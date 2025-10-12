@@ -1,15 +1,15 @@
+"""Export Azure Retail Prices in EUR to CSV format."""
+
 import api.azureapi as azureapi
 
-# Exports Azure Retail Prices in USD
-
 # Currency code(s) to use
-currency_list = ["EUR"]
+CURRENCY_LIST = ["EUR"]
 
-## Loop through the currencies
-for currency_code in currency_list:
+# Loop through the currencies
+for currency_code in CURRENCY_LIST:
     export_df = azureapi.get_prices(currency_code)
 
-    # Export to CSV - this is much faster than creating an xlsx file and can just as easily be imported into Excel
+    # Export to CSV - faster than xlsx and easily imported into Excel
     export_file = f"prices_{currency_code}.csv"
     print(f"Exporting prices to {export_file}")
     export_df.to_csv(export_file, index=False)

@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe"
+        },
+        {
+            "name": "Export VM Prices (USD)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/export_prices_vm_usd.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe"
+        },
+        {
+            "name": "Export All Prices (USD)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/export_prices_all_usd.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "${workspaceFolder}/.venv/Scripts/python.exe"
+        }
+    ]
+}
