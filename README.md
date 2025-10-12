@@ -196,6 +196,10 @@ The application supports environment variables for configuration:
 export AZURE_PRICE_API_VERSION="2023-01-01-preview"  # API version to use
 export REQUEST_TIMEOUT="30"                           # Request timeout in seconds
 export CACHE_EXPIRE_DAYS="1"                         # Cache expiration in days
+
+# Retry Configuration (for handling rate limiting)
+export MAX_RETRIES="5"                               # Maximum number of retries for failed requests
+export RETRY_BACKOFF_FACTOR="2.0"                    # Exponential backoff multiplier (wait: 2s, 4s, 8s, 16s, 32s)
 ```
 
 **Default values** are used if environment variables are not set.
@@ -237,10 +241,17 @@ The script uses [requests-cache](https://pypi.org/project/requests-cache) to tem
 The modernized codebase includes comprehensive error handling:
 
 - ✅ **HTTP errors** - Graceful handling of API failures with proper status codes
+- ✅ **Rate limiting (HTTP 429)** - Automatic retry with exponential backoff using urllib3.Retry
 - ✅ **Network timeouts** - Configurable request timeouts (default: 30 seconds)
 - ✅ **JSON parsing errors** - Robust handling of malformed API responses
 - ✅ **Logging** - Structured logging instead of print statements
-- ✅ **Retry logic** - Graceful degradation on temporary failures
+- ✅ **Retry logic** - Automatic retries for 429, 500, 502, 503, 504 errors with exponential backoff
+
+**Retry Behavior:**
+- Automatically retries failed requests up to 5 times (configurable via `MAX_RETRIES`)
+- Uses exponential backoff: 2s, 4s, 8s, 16s, 32s (configurable via `RETRY_BACKOFF_FACTOR`)
+- Respects `Retry-After` header from API responses
+- Handles temporary server errors and rate limiting gracefully
 
 **Debugging:** Set logging level to `DEBUG` for detailed troubleshooting information.
 

@@ -12,6 +12,8 @@ import enlighten  # pyright: ignore[reportMissingTypeStubs]
 import pandas as pd
 import requests
 import requests_cache
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -20,6 +22,11 @@ logger = logging.getLogger(__name__)
 API_VERSION = os.getenv("AZURE_PRICE_API_VERSION", "2023-01-01-preview")
 CACHE_EXPIRE_DAYS = int(os.getenv("CACHE_EXPIRE_DAYS", "1"))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))
+
+# Retry configuration for handling rate limiting (HTTP 429)
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
+RETRY_BACKOFF_FACTOR = float(os.getenv("RETRY_BACKOFF_FACTOR", "2.0"))
+RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]  # HTTP status codes to retry
 
 
 def get_price_data(
@@ -47,6 +54,30 @@ def get_price_data(
         requests_cache.CachedSession(
             "azure_cache", expire_after=timedelta(days=CACHE_EXPIRE_DAYS)
         ),
+    )
+
+    # Configure retry strategy for handling rate limiting (HTTP 429) and server errors
+    # Uses exponential backoff: wait times will be 2s, 4s, 8s, 16s, 32s (with default settings)
+    retry_strategy = Retry(
+        total=MAX_RETRIES,
+        status_forcelist=RETRY_STATUS_FORCELIST,
+        backoff_factor=RETRY_BACKOFF_FACTOR,
+        # Respect Retry-After header for 429 responses
+        respect_retry_after_header=True,
+        # Only retry on GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE methods
+        allowed_methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE"],
+    )
+
+    # Mount the retry adapter to both http and https
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    logger.debug(
+        "Configured retry strategy: max_retries=%d, backoff_factor=%.1f, status_forcelist=%s",
+        MAX_RETRIES,
+        RETRY_BACKOFF_FACTOR,
+        RETRY_STATUS_FORCELIST,
     )
 
     # Construct the base API url with configurable API version
