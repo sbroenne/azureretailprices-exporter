@@ -1,5 +1,9 @@
 # azureretailprices-exporter
 
+[![Tests](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml)
+[![CodeQL](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml)
+
 Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) as **JSON** and convert them to **CSV** if needed.
 
 - [azureretailprices-exporter](#azureretailprices-exporter)
@@ -20,6 +24,11 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
     - [Running Tests](#running-tests)
     - [Adding Dependencies](#adding-dependencies)
     - [Code Quality](#code-quality)
+  - [Continuous Integration](#continuous-integration)
+    - [🧪 **Automated Testing**](#-automated-testing)
+    - [🔍 **Code Quality Enforcement**](#-code-quality-enforcement)
+    - [📊 **Status Badges**](#-status-badges)
+    - [🔧 **Contributing Requirements**](#-contributing-requirements)
 
 ## Functionality
 
@@ -232,3 +241,47 @@ poetry run ruff check --fix .                # Auto-fix issues where possible
 - Code actions on save (organize imports, fix issues)
 
 The project follows **Python 3.10+** conventions including modern union syntax (`str | None` instead of `Optional[str]`).
+
+## Continuous Integration
+
+The project uses **GitHub Actions** for automated testing and code quality checks:
+
+### 🧪 **Automated Testing**
+
+- **Matrix Testing**: All tests run on Python 3.10, 3.11, and 3.12
+- **Triggers**: Every push and pull request to `main` and `dev` branches
+- **Coverage**: Code coverage reports with Codecov integration
+
+### 🔍 **Code Quality Enforcement**
+
+- **Linting**: Ruff checks for code quality and style
+- **Formatting**: Black ensures consistent code formatting
+- **Type Checking**: Pyright validates type annotations
+
+### 🔒 **Security Scanning**
+
+- **CodeQL**: GitHub's advanced semantic code analysis for security vulnerabilities
+- **Dependabot**: Automated dependency vulnerability scanning and updates
+- **GitHub Security Advisories**: Integration with the security advisory database
+
+### 📊 **Status Badges**
+
+The badges at the top of this README show the current status of:
+
+- [![Tests](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/ci.yml) - Unit test results
+- [![Code Quality](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml) - Linting, formatting, and type checking
+- [![CodeQL](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml) - Security vulnerability scanning
+
+### 🔧 **Contributing Requirements**
+
+Before submitting a pull request, ensure your code passes all checks:
+
+```console
+# Run all quality checks locally
+poetry run pytest                    # Run tests
+poetry run ruff check .              # Check linting
+poetry run black --check .           # Check formatting
+poetry run pyright                   # Type checking (optional)
+```
+
+**Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!
