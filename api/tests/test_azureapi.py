@@ -234,7 +234,7 @@ def test_calculate_fx_rates_with_filter():
             base_currency="USD",
             target_currencies=["EUR"],
             results_filter=f"$filter=meterId eq '{meter_id}'",
-            max_pages=1
+            max_pages=1,
         )
 
         # Verify the result
@@ -247,4 +247,3 @@ def test_calculate_fx_rates_with_filter():
     finally:
         # Restore the original function
         azureapi.get_prices = original_get_prices
-
