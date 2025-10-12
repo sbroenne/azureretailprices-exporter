@@ -2,11 +2,29 @@
 
 [![Tests](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/ci.yml)
 [![Code Quality](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml)
+[![Export Prices](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/export-prices.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/export-prices.yml)
 [![CodeQL](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml)
 
 Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) as **JSON** and convert them to **CSV** if needed.
 
+## 🚀 Quick Download - Daily Exports
+
+**Want the latest Azure prices without running the code?**
+
+📥 **[Download Today's CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/latest)** - All Azure retail prices in USD, updated daily!
+
+- ✅ **Automated daily exports** at 6 AM UTC
+- ✅ **Complete price data** for all Azure services
+- ✅ **CSV format** ready for Excel, Power BI, or analysis tools
+- ✅ **Public access** - no authentication required
+- ✅ **Two file formats available**:
+  - 📅 **Dated files** (`azure-retail-prices-usd-YYYY-MM-DD.csv`) - For historical tracking
+  - 🔄 **Latest file** (`azure-retail-prices-usd_latest.csv`) - Always contains current prices
+
+*Perfect for business analysis, cost planning, or research without needing to run the export scripts yourself!*
+
 - [azureretailprices-exporter](#azureretailprices-exporter)
+  - [🚀 Quick Download - Daily Exports](#-quick-download---daily-exports)
   - [Functionality](#functionality)
   - [Prerequisites](#prerequisites)
     - [Installation with Poetry (Recommended)](#installation-with-poetry-recommended)
@@ -25,25 +43,24 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
     - [Adding Dependencies](#adding-dependencies)
     - [Code Quality](#code-quality)
   - [Continuous Integration](#continuous-integration)
-    - [🧪 **Automated Testing**](#-automated-testing)
-    - [🔍 **Code Quality Enforcement**](#-code-quality-enforcement)
-    - [📊 **Status Badges**](#-status-badges)
-    - [🔧 **Contributing Requirements**](#-contributing-requirements)
+  - [Automated Exports](#automated-exports)
 
 ## Functionality
 
-A set of **Python scripts** that retrieves results from the Azure Retail Prices REST API, supports _API response pagination_, and converts the results into JSON and CSV files.
+A **modern Python project** that retrieves Azure Retail Prices from the official REST API, supports **API response pagination**, and converts results to JSON and CSV formats with **automated daily exports**.
 
-The project assumes familiarity with the [Azure Retail Prices API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) (e.g., setting filter parameters). It uses the Preview API to retrieve savings plan prices.
+The project includes both **manual export scripts** for custom use cases and **automated GitHub Actions workflows** that provide daily updated price data to the community.
 
 **Key Features:**
 
-- ✅ **Modern Python practices** - Type hints, logging, error handling
-- ✅ **Robust error handling** - Graceful API failure recovery
-- ✅ **Configurable timeouts** - Prevents hanging requests
-- ✅ **Progress tracking** - Visual progress bars during export
-- ✅ **Caching support** - Resumes interrupted exports
-- ✅ **Multiple output formats** - JSON and CSV export options
+- 🚀 **Automated Daily Exports** - Fresh price data available as GitHub releases
+- ✅ **Modern Python 3.10+** - Type hints, structured logging, comprehensive error handling
+- ✅ **Robust API integration** - Handles pagination, timeouts, and graceful error recovery
+- ✅ **Smart caching** - Resumes interrupted exports, 1-day API response caching
+- ✅ **Multiple formats** - JSON and CSV output with configurable options
+- ✅ **Progress tracking** - Visual progress bars during long exports
+- ✅ **Production ready** - Comprehensive testing, linting, and CI/CD pipeline
+- ✅ **Developer friendly** - Full VS Code integration, Poetry dependency management
 
 ## Prerequisites
 
@@ -285,3 +302,46 @@ poetry run pyright                   # Type checking (optional)
 ```
 
 **Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!
+
+## Automated Exports
+
+This project includes **fully automated daily exports** that make Azure pricing data accessible to everyone without requiring any technical setup.
+
+### 🔄 **How It Works**
+
+- **Daily Schedule**: Exports run automatically at 6 AM UTC every day
+- **Manual Trigger**: Can also be triggered manually via GitHub Actions
+- **Fresh Data**: Always pulls the latest pricing from Azure's official API
+- **Public Access**: Results are published as GitHub releases for easy download
+
+### 📁 **File Formats Available**
+
+Each export produces **two files**:
+
+1. **📅 Date-stamped file** (`azure-retail-prices-usd-2025-10-12.csv`)
+   - Permanent archive of pricing for that specific date
+   - Perfect for historical analysis and trend tracking
+   - Never overwritten - each day gets its own file
+
+2. **🔄 Latest file** (`azure-retail-prices-usd_latest.csv`)
+   - Always contains the most current pricing data
+   - Consistent filename for automation and bookmarking
+   - Updated with fresh data on every export run
+
+### 🎯 **Use Cases**
+
+- **📊 Business Intelligence**: Import into Power BI, Tableau, or Excel
+- **💰 Cost Planning**: Current pricing for budget forecasting
+- **📈 Price Analysis**: Historical trends and price changes over time
+- **🤖 Automation**: Reliable data source for automated workflows
+- **🔬 Research**: Academic studies on cloud pricing trends
+
+### 🌟 **Benefits**
+
+- ✅ **No setup required** - Just download and use
+- ✅ **Always current** - Fresh data daily
+- ✅ **Production ready** - Reliable, tested automation
+- ✅ **Community resource** - Open to everyone
+- ✅ **Multiple formats** - Choose what works for your needs
+
+> 💡 **Quick Start**: Visit the [releases page](https://github.com/sbroenne/azureretailprices-exporter/releases) and download the latest CSV file!

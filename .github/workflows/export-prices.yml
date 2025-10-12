@@ -1,0 +1,141 @@
+name: Export Azure Prices
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC to get fresh pricing data
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual triggering of the workflow
+
+jobs:
+  export-prices:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction
+
+    - name: Install project
+      run: poetry install --no-interaction
+
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+    - name: Export Azure prices to CSV
+      run: |
+        poetry run python -c "
+        import api.azureapi as azureapi
+        import os
+        import shutil
+        from datetime import datetime
+        
+        # Export all prices in USD
+        print('Starting Azure price export...')
+        export_df = azureapi.get_prices('USD')
+        
+        # Create filename with date
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        dated_filename = f'azure-retail-prices-usd-{date_str}.csv'
+        latest_filename = 'azure-retail-prices-usd_latest.csv'
+        
+        # Export to dated CSV
+        export_df.to_csv(dated_filename, index=False)
+        print(f'Exported {len(export_df)} price records to {dated_filename}')
+        
+        # Create latest version (copy of the dated file)
+        shutil.copy2(dated_filename, latest_filename)
+        print(f'Created latest version: {latest_filename}')
+        
+        # Set output for GitHub Actions
+        with open(os.environ['GITHUB_ENV'], 'a') as f:
+            f.write(f'DATED_FILENAME={dated_filename}\n')
+            f.write(f'LATEST_FILENAME={latest_filename}\n')
+            f.write(f'EXPORT_COUNT={len(export_df)}\n')
+        "
+
+    - name: Upload CSV as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: azure-prices-${{ steps.date.outputs.date }}
+        path: |
+          ${{ env.DATED_FILENAME }}
+          ${{ env.LATEST_FILENAME }}
+        retention-days: 90
+
+    - name: Create Release with CSV
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Create release with both the dated CSV file and latest version
+        gh release create "prices-${{ steps.date.outputs.date }}" \
+          "${{ env.DATED_FILENAME }}" \
+          "${{ env.LATEST_FILENAME }}" \
+          --title "Azure Retail Prices - ${{ steps.date.outputs.date }}" \
+          --notes "## Azure Retail Prices Export - ${{ steps.date.outputs.date }}
+          
+        **Export Details:**
+        - 📅 **Date**: ${{ steps.date.outputs.date }}
+        - 💰 **Currency**: USD
+        - 📊 **Total Records**: ${{ env.EXPORT_COUNT }}
+        - 🕐 **Generated**: Run #${{ github.run_number }}
+        
+        **Files Available:**
+        - **\`${{ env.DATED_FILENAME }}\`** - Timestamped version for historical tracking
+        - **\`${{ env.LATEST_FILENAME }}\`** - Always contains the most current prices (overwritten each run)
+        
+        **Download:**
+        The CSV files contain all current Azure retail prices in USD format, suitable for:
+        - Cost analysis and planning
+        - Price comparison studies  
+        - Business intelligence and reporting
+        - Academic research
+        
+        **File Format:** CSV with headers
+        **Update Frequency:** Daily (automated)
+        
+        > 💡 **Tip**: 
+        > - Use **\`${{ env.LATEST_FILENAME }}\`** for current pricing analysis
+        > - Use **\`${{ env.DATED_FILENAME }}\`** for historical price tracking
+        > 
+        > Check the [Azure Retail Prices API](https://docs.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) for the most current pricing information."
+
+    - name: Summary
+      run: |
+        echo "## 🎉 Azure Prices Export Complete!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Dated File**: \`${{ env.DATED_FILENAME }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Latest File**: \`${{ env.LATEST_FILENAME }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Records**: ${{ env.EXPORT_COUNT }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release**: [prices-${{ steps.date.outputs.date }}](https://github.com/${{ github.repository }}/releases/tag/prices-${{ steps.date.outputs.date }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Both CSV files are now available for public download from the releases page!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **Direct Downloads**:" >> $GITHUB_STEP_SUMMARY
+        echo "- [📅 Dated CSV](https://github.com/${{ github.repository }}/releases/download/prices-${{ steps.date.outputs.date }}/${{ env.DATED_FILENAME }}) - For historical tracking" >> $GITHUB_STEP_SUMMARY
+        echo "- [🔄 Latest CSV](https://github.com/${{ github.repository }}/releases/download/prices-${{ steps.date.outputs.date }}/${{ env.LATEST_FILENAME }}) - Always current prices" >> $GITHUB_STEP_SUMMARY
