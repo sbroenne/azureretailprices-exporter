@@ -1,5 +1,4 @@
-""" Unit tests for azureapi.py
-"""
+"""Unit tests for azureapi.py"""
 
 import pandas as pd
 
