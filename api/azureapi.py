@@ -187,6 +187,13 @@ def calculate_fx_rates(
         max_pages=max_pages,
     )
 
+    # Check if we have data
+    if len(base_df) == 0:
+        logger.warning("No prices found for base currency %s", base_currency)
+        return pd.DataFrame(
+            columns=["currency", "fxRate", "sampleSize", "productSample"]
+        )
+
     # Use a unique key to match products across currencies
     # We'll use a combination of fields that should uniquely identify a product
     base_df["matchKey"] = (
@@ -207,6 +214,11 @@ def calculate_fx_rates(
                 results_filter=results_filter,
                 max_pages=max_pages,
             )
+
+            # Check if we have data for target currency
+            if len(target_df) == 0:
+                logger.warning("No prices found for currency %s", target_currency)
+                continue
 
             # Create match key for target currency
             target_df["matchKey"] = (
