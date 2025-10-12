@@ -85,9 +85,14 @@ jobs:
             'BRL', 'KRW', 'SEK', 'NOK', 'DKK', 'NZD', 'RUB', 'ZAR'
         ]
         
+        # MeterId to use for FX rate comparison
+        # This specific meter ensures consistent price comparison across currencies
+        meter_id = '5daea80f-04ac-5385-86f0-b263d23becd2'
+        
         fx_df = azureapi.calculate_fx_rates(
             base_currency='USD',
-            target_currencies=target_currencies
+            target_currencies=target_currencies,
+            results_filter=f\"\$filter=meterId eq '{meter_id}'\"
         )
         
         # Use consistent filename for FX rates

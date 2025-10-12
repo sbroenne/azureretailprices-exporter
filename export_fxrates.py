@@ -3,6 +3,9 @@
 This script calculates foreign exchange rates by comparing Azure retail prices
 across different currencies. It uses USD as the base currency and calculates
 rates for multiple target currencies.
+
+The FX rate calculation uses a specific meterId to ensure consistent comparison
+across all currencies, making the calculation more efficient and reliable.
 """
 
 import api.azureapi as azureapi
@@ -31,10 +34,17 @@ TARGET_CURRENCIES = [
     "ZAR",  # South African Rand
 ]
 
-# Calculate FX rates
+# MeterId to use for FX rate comparison
+# This specific meter is used to ensure consistent price comparison across currencies
+METER_ID = "5daea80f-04ac-5385-86f0-b263d23becd2"
+
+# Calculate FX rates using the specific meterId filter
 print(f"Calculating FX rates from {BASE_CURRENCY} to multiple currencies...")
+print(f"Using meterId filter: {METER_ID}")
 fx_df = azureapi.calculate_fx_rates(
-    base_currency=BASE_CURRENCY, target_currencies=TARGET_CURRENCIES
+    base_currency=BASE_CURRENCY,
+    target_currencies=TARGET_CURRENCIES,
+    results_filter=f"$filter=meterId eq '{METER_ID}'",
 )
 
 # Export to CSV
