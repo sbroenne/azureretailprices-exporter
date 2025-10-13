@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/sbroenne/azureretailprices-exporter/discussions
+    about: Ask questions or discuss ideas with the community
+  - name: Documentation
+    url: https://github.com/sbroenne/azureretailprices-exporter/blob/main/README.md
+    about: Read the project documentation

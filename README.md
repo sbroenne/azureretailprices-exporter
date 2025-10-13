@@ -49,6 +49,7 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
     - [🔒 **Security Scanning**](#-security-scanning)
     - [📊 **Status Badges**](#-status-badges)
     - [🔧 **Contributing Requirements**](#-contributing-requirements)
+    - [📝 **Contributing Guidelines**](#-contributing-guidelines)
   - [Automated Exports](#automated-exports)
     - [🔄 **How It Works**](#-how-it-works)
     - [📁 **Release Types Available**](#-release-types-available)
@@ -358,6 +359,17 @@ poetry run pyright                   # Type checking (optional)
 ```
 
 **Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!
+
+### 📝 **Contributing Guidelines**
+
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Setting up your development environment
+- Our development workflow
+- Pull request process
+- Coding standards and best practices
+
+Also review our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## Automated Exports
 
