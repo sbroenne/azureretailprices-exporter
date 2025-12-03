@@ -58,6 +58,8 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
     - [🎯 **Download URLs**](#-download-urls)
     - [🎯 **Use Cases**](#-use-cases)
     - [🌟 **Benefits**](#-benefits)
+  - [Related Projects](#related-projects)
+    - [📊 **Excel MCP Server**](#-excel-mcp-server)
 
 ## Functionality
 
@@ -439,3 +441,24 @@ For **automation** and **consistent access**, use these direct download links:
 - ✅ **Simple URLs** - Consistent naming for automation
 
 > 💡 **Quick Start**: Visit the [releases page](https://github.com/sbroenne/azureretailprices-exporter/releases) and download from either the **latest** release or any **dated** release!
+
+## Related Projects
+
+Check out these related projects for working with Azure pricing data:
+
+### 📊 **Excel MCP Server**
+
+[**Excel MCP Server**](https://sbroenne.github.io/mcp-server-excel/) - AI-powered Excel automation through natural language.
+
+Use the exported Azure pricing CSV files with AI assistants like GitHub Copilot, Claude, or ChatGPT to:
+
+- **Analyze pricing data** - Create PivotTables, charts, and summaries using natural language
+- **Build cost reports** - Generate formatted reports with conditional formatting
+- **Automate workflows** - Use Power Query to refresh pricing data and calculate costs
+- **Compare prices** - Create dashboards for price trend analysis
+
+**Example**: *"Create a PivotTable showing Azure VM prices by region, sorted by cost"*
+
+[![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/sbroenne.excel-mcp)](https://marketplace.visualstudio.com/items?itemName=sbroenne.excel-mcp)
+
+[Learn more →](https://github.com/sbroenne/mcp-server-excel/)
