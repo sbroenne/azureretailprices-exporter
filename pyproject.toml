@@ -19,7 +19,7 @@ numpy = "*"
 pytest = "^9.0.2"
 black = "^25.9.0"
 ruff = "^0.14.0"
-pyright = "^1.1.0"
+pyright = "^1.1.407"
 pytest-cov = "^6.0.0"
 
 [tool.black]
