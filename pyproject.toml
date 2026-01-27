@@ -18,7 +18,7 @@ numpy = "*"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
 black = "^26.1.0"
-ruff = "^0.14.10"
+ruff = "^0.14.14"
 pyright = "^1.1.407"
 pytest-cov = "^6.0.0"
 
