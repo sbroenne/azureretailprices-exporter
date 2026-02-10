@@ -21,7 +21,7 @@ This project adheres to a Code of Conduct that all contributors are expected to 
 ### Prerequisites
 
 - Python 3.10 or higher
-- [Poetry](https://python-poetry.org/) for dependency management
+- [uv](https://docs.astral.sh/uv/) for dependency management
 - Git for version control
 
 ### Setting Up Your Development Environment
@@ -39,19 +39,19 @@ This project adheres to a Code of Conduct that all contributors are expected to 
    git remote add upstream https://github.com/sbroenne/azureretailprices-exporter.git
    ```
 
-4. **Install Poetry** (if not already installed):
+4. **Install uv** (if not already installed):
    ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
 5. **Install dependencies**:
    ```bash
-   poetry install
+   uv sync
    ```
 
-6. **Activate the virtual environment**:
+6. **Run commands through uv**:
    ```bash
-   poetry shell
+   uv run pytest
    ```
 
 ### VS Code Setup (Recommended)
@@ -109,26 +109,26 @@ Ensure your code passes all quality checks:
 
 ```bash
 # Run tests
-poetry run pytest
+uv run pytest
 
 # Check linting
-poetry run ruff check .
+uv run ruff check .
 
 # Check code formatting
-poetry run black --check .
+uv run black --check .
 
 # Optional: Type checking
-poetry run pyright
+uv run pyright
 ```
 
 **Fix any issues** before submitting your PR:
 
 ```bash
 # Auto-fix linting issues
-poetry run ruff check --fix .
+uv run ruff check --fix .
 
 # Auto-format code
-poetry run black .
+uv run black .
 ```
 
 ### Submitting a Pull Request
@@ -190,7 +190,7 @@ The project uses the following tools to maintain code quality:
 Format your code with Black before committing:
 
 ```bash
-poetry run black api/ export_prices_*.py
+uv run black api/ export_prices_*.py
 ```
 
 ### Linting
@@ -198,8 +198,8 @@ poetry run black api/ export_prices_*.py
 Check and fix linting issues:
 
 ```bash
-poetry run ruff check .
-poetry run ruff check --fix .  # Auto-fix where possible
+uv run ruff check .
+uv run ruff check --fix .  # Auto-fix where possible
 ```
 
 ## Testing
@@ -209,19 +209,19 @@ poetry run ruff check --fix .  # Auto-fix where possible
 Run the test suite:
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 Run tests with coverage:
 
 ```bash
-poetry run pytest --cov=api --cov-report=term-missing
+uv run pytest --cov=api --cov-report=term-missing
 ```
 
 Run specific tests:
 
 ```bash
-poetry run pytest api/tests/test_azureapi.py::test_name
+uv run pytest api/tests/test_azureapi.py::test_name
 ```
 
 ### Writing Tests

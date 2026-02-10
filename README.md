@@ -28,8 +28,8 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
   - [🚀 Quick Download - Daily Exports](#-quick-download---daily-exports)
   - [Functionality](#functionality)
   - [Prerequisites](#prerequisites)
-    - [Installation with Poetry (Recommended)](#installation-with-poetry-recommended)
-    - [Alternative: Python without Poetry](#alternative-python-without-poetry)
+    - [Installation with uv (Recommended)](#installation-with-uv-recommended)
+    - [Alternative: Python without uv](#alternative-python-without-uv)
   - [Usage](#usage)
     - [Export all Azure Products in USD](#export-all-azure-products-in-usd)
     - [Export prices for Virtual Machines with filters](#export-prices-for-virtual-machines-with-filters)
@@ -77,7 +77,7 @@ The project includes both **manual export scripts** for custom use cases and **a
 - ✅ **Multiple formats** - JSON and CSV output with configurable options
 - ✅ **Progress tracking** - Visual progress bars during long exports
 - ✅ **Production ready** - Comprehensive testing, linting, and CI/CD pipeline
-- ✅ **Developer friendly** - Full VS Code integration, Poetry dependency management
+- ✅ **Developer friendly** - Full VS Code integration, uv dependency management
 
 ## Prerequisites
 
@@ -92,31 +92,25 @@ The script requires the following dependencies:
 
 **Python Version:** 3.10+ required
 
-We recommend using **Poetry** for dependency management and virtual environments.
+We recommend using **uv** for dependency management and virtual environments.
 
-### Installation with Poetry (Recommended)
+### Installation with uv (Recommended)
 
-1. Install [Poetry](https://python-poetry.org/docs/#installation) if you haven't already:
-
-   ```console
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-
-2. Install dependencies and create virtual environment:
+1. Install [uv](https://docs.astral.sh/uv/) if you haven't already:
 
    ```console
-   poetry install
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. Activate the virtual environment:
+2. Install dependencies and create the virtual environment:
 
    ```console
-   poetry shell
+   uv sync
    ```
 
-### Alternative: Python without Poetry
+### Alternative: Python without uv
 
-If you prefer not to use Poetry, you can install dependencies directly:
+If you prefer not to use uv, you can install dependencies directly:
 
 ```console
 pip install pandas requests-cache enlighten pyarrow requests numpy
@@ -135,7 +129,7 @@ Here are examples of how to use the export scripts:
 ### Export all Azure Products in USD
 
 ```console
-poetry run python export_prices_all_usd.py
+uv run python export_prices_all_usd.py
 ```
 
 This creates the file `prices_USD.csv` with all Azure product prices.
@@ -143,11 +137,11 @@ This creates the file `prices_USD.csv` with all Azure product prices.
 ### Export prices for Virtual Machines with filters
 
 ```console
-poetry run python export_prices_vm_usd.py
+uv run python export_prices_vm_usd.py
 ```
 
 ```console
-poetry run python export_prices_with_filter_and_multiple_currencies.py
+uv run python export_prices_with_filter_and_multiple_currencies.py
 ```
 
 ### Available Export Scripts
@@ -165,7 +159,7 @@ poetry run python export_prices_with_filter_and_multiple_currencies.py
 The `export_fxrates.py` script calculates foreign exchange rates by comparing Azure retail prices across different currencies:
 
 ```console
-poetry run python export_fxrates.py
+uv run python export_fxrates.py
 ```
 
 This creates the file `fxrates_usd.csv` with calculated exchange rates for multiple currencies.
@@ -218,12 +212,12 @@ azureretailprices-exporter/
 │   ├── azureapi_modern.py   # Class-based API client example
 │   └── tests/               # Unit tests
 ├── export_*.py              # Example export scripts
-├── pyproject.toml           # Poetry dependencies and configuration
-├── poetry.lock              # Locked dependency versions
+├── pyproject.toml           # Project dependencies and configuration
+├── uv.lock                  # Locked dependency versions
 └── .vscode/                 # VS Code configuration
     ├── settings.json        # Python interpreter settings
     ├── launch.json          # Debug configurations
-    ├── tasks.json           # Poetry tasks
+    ├── tasks.json           # uv tasks
     └── extensions.json      # Recommended extensions
 ```
 
@@ -264,10 +258,10 @@ The modernized codebase includes comprehensive error handling:
 
 The project includes VS Code configuration for optimal development experience:
 
-- **Python interpreter** automatically configured for Poetry virtual environment
+- **Python interpreter** automatically configured for uv virtual environment
 - **Debug configurations** for running export scripts
 - **Tasks** for common operations:
-  - Poetry dependency management
+  - uv dependency management
   - Running tests with pytest
   - Code formatting with Black
   - Linting and fixing with Ruff
@@ -276,14 +270,14 @@ The project includes VS Code configuration for optimal development experience:
 ### Running Tests
 
 ```console
-poetry run pytest
+uv run pytest
 ```
 
 ### Adding Dependencies
 
 ```console
-poetry add package-name              # Production dependency
-poetry add --group dev package-name  # Development dependency
+uv add package-name                  # Production dependency
+uv add --dev package-name            # Development dependency
 ```
 
 ### Code Quality
@@ -300,14 +294,14 @@ The project uses modern Python development tools for code quality:
 **Code Formatting:**
 
 ```console
-poetry run black api/ export_prices_*.py    # Format all Python files
+uv run black api/ export_prices_*.py        # Format all Python files
 ```
 
 **Linting:**
 
 ```console
-poetry run ruff check .                      # Check for linting issues
-poetry run ruff check --fix .                # Auto-fix issues where possible
+uv run ruff check .                          # Check for linting issues
+uv run ruff check --fix .                    # Auto-fix issues where possible
 ```
 
 **VS Code Integration:**
@@ -354,10 +348,10 @@ Before submitting a pull request, ensure your code passes all checks:
 
 ```console
 # Run all quality checks locally
-poetry run pytest                    # Run tests
-poetry run ruff check .              # Check linting
-poetry run black --check .           # Check formatting
-poetry run pyright                   # Type checking (optional)
+uv run pytest                        # Run tests
+uv run ruff check .                  # Check linting
+uv run black --check .               # Check formatting
+uv run pyright                       # Type checking (optional)
 ```
 
 **Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!

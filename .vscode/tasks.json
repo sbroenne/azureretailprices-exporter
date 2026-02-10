@@ -2,10 +2,10 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Poetry: Install Dependencies",
+            "label": "uv: Sync Dependencies",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
-            "args": ["install"],
+            "command": "uv",
+            "args": ["sync"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -16,9 +16,9 @@
             "problemMatcher": []
         },
         {
-            "label": "Poetry: Add Dependency",
+            "label": "uv: Add Dependency",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
+            "command": "uv",
             "args": ["add", "${input:packageName}"],
             "group": "build",
             "presentation": {
@@ -30,10 +30,10 @@
             "problemMatcher": []
         },
         {
-            "label": "Poetry: Update Dependencies",
+            "label": "uv: Update Dependencies",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
-            "args": ["update"],
+            "command": "uv",
+            "args": ["lock", "--upgrade"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -46,7 +46,7 @@
         {
             "label": "Run Tests",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
+            "command": "uv",
             "args": ["run", "pytest"],
             "group": "test",
             "presentation": {
@@ -60,7 +60,7 @@
         {
             "label": "Format Code (Black)",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
+            "command": "uv",
             "args": ["run", "black", "api/", "export_prices_*.py"],
             "group": "build",
             "presentation": {
@@ -74,7 +74,7 @@
         {
             "label": "Lint Code (Ruff)",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
+            "command": "uv",
             "args": ["run", "ruff", "check", "api/", "export_prices_*.py"],
             "group": "build",
             "presentation": {
@@ -101,7 +101,7 @@
         {
             "label": "Fix Code (Ruff)",
             "type": "shell",
-            "command": "${workspaceFolder}/.venv/Scripts/poetry",
+            "command": "uv",
             "args": ["run", "ruff", "check", "--fix", "api/", "export_prices_*.py"],
             "group": "build",
             "presentation": {

@@ -33,7 +33,7 @@ assignees: ''
 
 - **OS**: [e.g., Ubuntu 22.04, Windows 11, macOS 13]
 - **Python Version**: [e.g., 3.10, 3.11, 3.12]
-- **Poetry Version**: [e.g., 1.7.0]
+- **uv Version**: [e.g., 0.9.0]
 - **Project Version/Commit**: [e.g., v1.0.0 or commit hash]
 
 ## Error Messages/Logs
