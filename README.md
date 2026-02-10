@@ -39,17 +39,11 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
   - [Caching](#caching)
   - [Error Handling](#error-handling)
   - [Development](#development)
-    - [VS Code Setup](#vs-code-setup)
-    - [Running Tests](#running-tests)
-    - [Adding Dependencies](#adding-dependencies)
-    - [Code Quality](#code-quality)
   - [Continuous Integration](#continuous-integration)
     - [🧪 **Automated Testing**](#-automated-testing)
     - [🔍 **Code Quality Enforcement**](#-code-quality-enforcement)
     - [🔒 **Security Scanning**](#-security-scanning)
     - [📊 **Status Badges**](#-status-badges)
-    - [🔧 **Contributing Requirements**](#-contributing-requirements)
-    - [📝 **Contributing Guidelines**](#-contributing-guidelines)
   - [Automated Exports](#automated-exports)
     - [🔄 **How It Works**](#-how-it-works)
     - [📁 **Release Types Available**](#-release-types-available)
@@ -119,7 +113,7 @@ pip install pandas requests-cache enlighten pyarrow requests numpy
 For development dependencies:
 
 ```console
-pip install pytest black ruff
+pip install pytest ruff
 ```
 
 ## Usage
@@ -254,63 +248,7 @@ The modernized codebase includes comprehensive error handling:
 
 ## Development
 
-### VS Code Setup
-
-The project includes VS Code configuration for optimal development experience:
-
-- **Python interpreter** automatically configured for uv virtual environment
-- **Debug configurations** for running export scripts
-- **Tasks** for common operations:
-  - uv dependency management
-  - Running tests with pytest
-  - Code formatting with Black
-  - Linting and fixing with Ruff
-- **Extensions** recommendations for Python development (Black, Ruff, Pylance)
-
-### Running Tests
-
-```console
-uv run pytest
-```
-
-### Adding Dependencies
-
-```console
-uv add package-name                  # Production dependency
-uv add --dev package-name            # Development dependency
-```
-
-### Code Quality
-
-The project uses modern Python development tools for code quality:
-
-- **[Black](https://black.readthedocs.io/)** - Uncompromising code formatter
-- **[Ruff](https://docs.astral.sh/ruff/)** - Extremely fast Python linter (replaces flake8, isort, pyupgrade)
-- **Type hints** for better IDE support and static analysis
-- **Structured logging** for debugging and monitoring
-- **Comprehensive error handling** for robustness
-- **Environment-based configuration** for flexibility
-
-**Code Formatting:**
-
-```console
-uv run black api/ export_prices_*.py        # Format all Python files
-```
-
-**Linting:**
-
-```console
-uv run ruff check .                          # Check for linting issues
-uv run ruff check --fix .                    # Auto-fix issues where possible
-```
-
-**VS Code Integration:**
-
-- Automatic formatting on save with Black
-- Real-time linting with Ruff
-- Code actions on save (organize imports, fix issues)
-
-The project follows **Python 3.10+** conventions including modern union syntax (`str | None` instead of `Optional[str]`).
+Developer setup, tooling, and code quality workflows are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Continuous Integration
 
@@ -325,7 +263,7 @@ The project uses **GitHub Actions** for automated testing and code quality check
 ### 🔍 **Code Quality Enforcement**
 
 - **Linting**: Ruff checks for code quality and style
-- **Formatting**: Black ensures consistent code formatting
+- **Formatting**: Ruff enforces consistent code formatting
 - **Type Checking**: Pyright validates type annotations
 
 ### 🔒 **Security Scanning**
@@ -342,30 +280,7 @@ The badges at the top of this README show the current status of:
 - [![Code Quality](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml) - Linting, formatting, and type checking
 - [![CodeQL](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml) - Security vulnerability scanning
 
-### 🔧 **Contributing Requirements**
-
-Before submitting a pull request, ensure your code passes all checks:
-
-```console
-# Run all quality checks locally
-uv run pytest                        # Run tests
-uv run ruff check .                  # Check linting
-uv run black --check .               # Check formatting
-uv run pyright                       # Type checking (optional)
-```
-
-**Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!
-
-### 📝 **Contributing Guidelines**
-
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
-
-- Setting up your development environment
-- Our development workflow
-- Pull request process
-- Coding standards and best practices
-
-Also review our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+For contribution requirements and developer workflows, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Automated Exports
 

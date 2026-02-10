@@ -7,8 +7,6 @@
         
         // Code Quality & Formatting
         "charliermarsh.ruff",
-        "ms-python.black-formatter",
-        "ms-python.isort",
         
         // Testing
         "ms-python.pytest",

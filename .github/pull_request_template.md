@@ -44,7 +44,7 @@ Fixes #
 <!-- Ensure all checks pass before submitting -->
 
 - [ ] Code follows the project's coding standards
-- [ ] Code is formatted with Black (`uv run black .`)
+- [ ] Code is formatted with Ruff (`uv run ruff format .`)
 - [ ] Code passes linting checks (`uv run ruff check .`)
 - [ ] Type hints are added/updated where appropriate
 - [ ] Documentation is updated (README, docstrings, comments)

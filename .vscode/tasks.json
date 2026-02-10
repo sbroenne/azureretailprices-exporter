@@ -58,10 +58,10 @@
             "problemMatcher": []
         },
         {
-            "label": "Format Code (Black)",
+            "label": "Format Code (Ruff)",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "black", "api/", "export_prices_*.py"],
+            "args": ["run", "ruff", "format", "api/", "export_prices_*.py"],
             "group": "build",
             "presentation": {
                 "echo": true,

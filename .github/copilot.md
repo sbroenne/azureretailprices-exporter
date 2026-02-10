@@ -30,9 +30,9 @@ This is a **modern Python project** that retrieves Azure Retail Prices from the 
 - Follow **PEP 8** conventions
 
 ### Code Formatting
-- **Black** is the code formatter (line-length: 88)
-- Format code with: `uv run black api/ export_prices_*.py`
-- All code must pass Black formatting checks
+- **Ruff** is the code formatter (line-length: 88)
+- Format code with: `uv run ruff format api/ export_prices_*.py`
+- All code must pass Ruff formatting checks
 
 ### Linting
 - **Ruff** is the linter (replaces flake8, isort, pyupgrade)
@@ -83,7 +83,7 @@ azureretailprices-exporter/
 
 ### Development Dependencies
 - **pytest** - Testing framework
-- **black** - Code formatter
+- **ruff** - Linter and formatter
 - **ruff** - Linter
 - **pyright** - Type checker (added as needed)
 
@@ -130,10 +130,10 @@ The project includes comprehensive VS Code configuration:
 - **Python interpreter** automatically configured for uv virtual environment
 - **Debug configurations** for running export scripts
 - **Tasks** for common operations (dependency management, testing, formatting, linting)
-- **Extensions** recommendations: Black, Ruff, Pylance
+- **Extensions** recommendations: Ruff, Pylance
 
 ### Auto-formatting on Save
-- Files are automatically formatted with Black on save
+- Files are automatically formatted with Ruff on save
 - Real-time linting with Ruff
 - Code actions on save (organize imports, fix issues)
 
@@ -143,7 +143,7 @@ The project includes comprehensive VS Code configuration:
 All workflows are in `.github/workflows/`:
 
 1. **ci.yml** - Automated testing on Python 3.10, 3.11, and 3.12
-2. **quality.yml** - Code quality checks (Ruff, Black, Pyright, coverage)
+2. **quality.yml** - Code quality checks (Ruff, Pyright, coverage)
 3. **codeql-analysis.yml** - Security scanning with CodeQL
 4. **export-prices.yml** - Automated daily price exports at 6 AM UTC
 
@@ -152,7 +152,7 @@ Before submitting a pull request, ensure code passes all checks:
 ```console
 uv run pytest                    # Run tests
 uv run ruff check .              # Check linting
-uv run black --check .           # Check formatting
+uv run ruff format --check .           # Check formatting
 uv run pyright                   # Type checking (optional)
 ```
 
@@ -226,7 +226,7 @@ uv run python export_prices_vm_usd.py
 
 ### Formatting and Linting
 ```console
-uv run black .                   # Format all files
+uv run ruff format .                   # Format all files
 uv run ruff check --fix .        # Fix linting issues
 uv run ruff check .              # Check for issues
 ```
@@ -242,7 +242,7 @@ uv run pytest api/tests/test_azureapi.py  # Run specific test file
 
 1. **Always use modern Python 3.10+ syntax** - No legacy type hints or imports
 2. **Type everything** - Use type hints for all parameters and return values
-3. **Format with Black** - Code must pass Black formatting (line-length: 88)
+3. **Format with Ruff** - Code must pass Ruff formatting (line-length: 88)
 4. **Lint with Ruff** - Code must pass all Ruff checks
 5. **Write tests** - Include unit tests for new functionality
 6. **Use structured logging** - Never use print() for logging in production code
@@ -316,7 +316,7 @@ uv run pytest api/tests/test_azureapi.py  # Run specific test file
 Before marking work as complete, verify:
 
 1. ✅ All tests pass: `uv run pytest`
-2. ✅ Code is properly formatted: `uv run black --check .`
+2. ✅ Code is properly formatted: `uv run ruff format --check .`
 3. ✅ No linting issues: `uv run ruff check .`
 4. ✅ Type checking passes (if applicable): `uv run pyright`
 5. ✅ Manual testing completed for changed functionality
@@ -371,12 +371,12 @@ uv sync                     # Install all dependencies
 ```bash
 # Run all quality checks (do this before submitting PR)
 uv run pytest                  # Tests
-uv run black --check .         # Formatting check
+uv run ruff format --check .         # Formatting check
 uv run ruff check .            # Linting check
 uv run pyright                 # Type checking (optional)
 
 # Auto-fix issues
-uv run black .                 # Format code
+uv run ruff format .                 # Format code
 uv run ruff check --fix .      # Fix auto-fixable linting issues
 ```
 

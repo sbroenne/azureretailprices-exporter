@@ -36,9 +36,9 @@ jobs:
       run: |
         uv run ruff check . --output-format=github
 
-    - name: Check code formatting with Black
+    - name: Check code formatting with Ruff
       run: |
-        uv run black --check --diff .
+        uv run ruff format --check --diff .
 
     - name: Type checking with Pyright
       run: |

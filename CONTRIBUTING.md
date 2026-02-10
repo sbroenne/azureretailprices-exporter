@@ -65,6 +65,21 @@ This project includes VS Code configuration for an optimal development experienc
 
 Simply open the project in VS Code and install the recommended extensions when prompted.
 
+### Development Tools
+
+#### Adding Dependencies
+
+```bash
+uv add package-name                  # Production dependency
+uv add --dev package-name            # Development dependency
+```
+
+#### VS Code Integration
+
+- Automatic formatting on save with Ruff
+- Real-time linting with Ruff
+- Code actions on save (organize imports, fix issues)
+
 ## Development Workflow
 
 ### Creating a Branch
@@ -115,7 +130,7 @@ uv run pytest
 uv run ruff check .
 
 # Check code formatting
-uv run black --check .
+uv run ruff format --check .
 
 # Optional: Type checking
 uv run pyright
@@ -128,7 +143,7 @@ uv run pyright
 uv run ruff check --fix .
 
 # Auto-format code
-uv run black .
+uv run ruff format .
 ```
 
 ### Submitting a Pull Request
@@ -163,7 +178,7 @@ uv run black .
 
 - **Python 3.10+** syntax (modern union types, etc.)
 - **Type hints** for all functions and methods
-- **Black** for code formatting (line length: 88)
+- **Ruff** for code formatting (line length: 88)
 - **Ruff** for linting
 - **Structured logging** instead of print statements
 
@@ -171,8 +186,7 @@ uv run black .
 
 The project uses the following tools to maintain code quality:
 
-- **[Black](https://black.readthedocs.io/)** - Code formatter
-- **[Ruff](https://docs.astral.sh/ruff/)** - Fast Python linter
+- **[Ruff](https://docs.astral.sh/ruff/)** - Linter and formatter
 - **[Pyright](https://github.com/microsoft/pyright)** - Type checker (optional)
 - **[pytest](https://pytest.org/)** - Testing framework
 
@@ -187,10 +201,10 @@ The project uses the following tools to maintain code quality:
 
 ### Code Formatting
 
-Format your code with Black before committing:
+Format your code with Ruff before committing:
 
 ```bash
-uv run black api/ export_prices_*.py
+uv run ruff format api/ export_prices_*.py
 ```
 
 ### Linting

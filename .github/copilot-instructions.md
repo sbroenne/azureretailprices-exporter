@@ -11,8 +11,8 @@
 ## Lint / Format / Type-check
 - `uv run ruff check .`
 - `uv run ruff check --fix .`
-- `uv run black --check .`
-- `uv run black .`
+- `uv run ruff format --check .`
+- `uv run ruff format .`
 - `uv run pyright`
 
 ## High-level architecture

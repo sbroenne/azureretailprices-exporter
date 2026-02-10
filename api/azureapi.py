@@ -82,9 +82,7 @@ def get_price_data(
 
     # Construct the base API url with configurable API version
     base_url = "https://prices.azure.com/api/retail/prices"
-    api_url = (
-        f"{base_url}?api-version={API_VERSION}" f"&currencyCode='{currency_code}''"
-    )
+    api_url = f"{base_url}?api-version={API_VERSION}&currencyCode='{currency_code}''"
 
     # Add optional filter argument
     if results_filter:
