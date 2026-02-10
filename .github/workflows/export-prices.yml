@@ -26,22 +26,14 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
       with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-
-    - name: Load cached venv
-      id: cached-poetry-dependencies
-      uses: actions/cache@v5
-      with:
-        path: .venv
-        key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+        version: "latest"
+        enable-cache: true
 
     - name: Install dependencies
-      run: poetry install --no-interaction
+      run: uv sync --no-dev
 
     - name: Get current date
       id: date
@@ -49,7 +41,7 @@ jobs:
 
     - name: Export Azure prices to CSV
       run: |
-        poetry run python -c "
+        uv run python -c "
         import api.azureapi as azureapi
         import os
         
@@ -72,7 +64,7 @@ jobs:
 
     - name: Export FX rates
       run: |
-        poetry run python -c "
+        uv run python -c "
         import api.azureapi as azureapi
         import os
         

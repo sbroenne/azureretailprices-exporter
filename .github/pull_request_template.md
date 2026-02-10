@@ -32,7 +32,7 @@ Fixes #
 
 <!-- Describe the tests you ran to verify your changes -->
 
-- [ ] Existing tests pass (`poetry run pytest`)
+- [ ] Existing tests pass (`uv run pytest`)
 - [ ] Added new tests for new functionality
 - [ ] Tested manually (describe below)
 
@@ -44,8 +44,8 @@ Fixes #
 <!-- Ensure all checks pass before submitting -->
 
 - [ ] Code follows the project's coding standards
-- [ ] Code is formatted with Black (`poetry run black .`)
-- [ ] Code passes linting checks (`poetry run ruff check .`)
+- [ ] Code is formatted with Ruff (`uv run ruff format .`)
+- [ ] Code passes linting checks (`uv run ruff check .`)
 - [ ] Type hints are added/updated where appropriate
 - [ ] Documentation is updated (README, docstrings, comments)
 - [ ] No new warnings are introduced

@@ -28,8 +28,8 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
   - [🚀 Quick Download - Daily Exports](#-quick-download---daily-exports)
   - [Functionality](#functionality)
   - [Prerequisites](#prerequisites)
-    - [Installation with Poetry (Recommended)](#installation-with-poetry-recommended)
-    - [Alternative: Python without Poetry](#alternative-python-without-poetry)
+    - [Installation with uv (Recommended)](#installation-with-uv-recommended)
+    - [Alternative: Python without uv](#alternative-python-without-uv)
   - [Usage](#usage)
     - [Export all Azure Products in USD](#export-all-azure-products-in-usd)
     - [Export prices for Virtual Machines with filters](#export-prices-for-virtual-machines-with-filters)
@@ -39,17 +39,11 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
   - [Caching](#caching)
   - [Error Handling](#error-handling)
   - [Development](#development)
-    - [VS Code Setup](#vs-code-setup)
-    - [Running Tests](#running-tests)
-    - [Adding Dependencies](#adding-dependencies)
-    - [Code Quality](#code-quality)
   - [Continuous Integration](#continuous-integration)
     - [🧪 **Automated Testing**](#-automated-testing)
     - [🔍 **Code Quality Enforcement**](#-code-quality-enforcement)
     - [🔒 **Security Scanning**](#-security-scanning)
     - [📊 **Status Badges**](#-status-badges)
-    - [🔧 **Contributing Requirements**](#-contributing-requirements)
-    - [📝 **Contributing Guidelines**](#-contributing-guidelines)
   - [Automated Exports](#automated-exports)
     - [🔄 **How It Works**](#-how-it-works)
     - [📁 **Release Types Available**](#-release-types-available)
@@ -77,7 +71,7 @@ The project includes both **manual export scripts** for custom use cases and **a
 - ✅ **Multiple formats** - JSON and CSV output with configurable options
 - ✅ **Progress tracking** - Visual progress bars during long exports
 - ✅ **Production ready** - Comprehensive testing, linting, and CI/CD pipeline
-- ✅ **Developer friendly** - Full VS Code integration, Poetry dependency management
+- ✅ **Developer friendly** - Full VS Code integration, uv dependency management
 
 ## Prerequisites
 
@@ -92,31 +86,25 @@ The script requires the following dependencies:
 
 **Python Version:** 3.10+ required
 
-We recommend using **Poetry** for dependency management and virtual environments.
+We recommend using **uv** for dependency management and virtual environments.
 
-### Installation with Poetry (Recommended)
+### Installation with uv (Recommended)
 
-1. Install [Poetry](https://python-poetry.org/docs/#installation) if you haven't already:
-
-   ```console
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-
-2. Install dependencies and create virtual environment:
+1. Install [uv](https://docs.astral.sh/uv/) if you haven't already:
 
    ```console
-   poetry install
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. Activate the virtual environment:
+2. Install dependencies and create the virtual environment:
 
    ```console
-   poetry shell
+   uv sync
    ```
 
-### Alternative: Python without Poetry
+### Alternative: Python without uv
 
-If you prefer not to use Poetry, you can install dependencies directly:
+If you prefer not to use uv, you can install dependencies directly:
 
 ```console
 pip install pandas requests-cache enlighten pyarrow requests numpy
@@ -125,7 +113,7 @@ pip install pandas requests-cache enlighten pyarrow requests numpy
 For development dependencies:
 
 ```console
-pip install pytest black ruff
+pip install pytest ruff
 ```
 
 ## Usage
@@ -135,7 +123,7 @@ Here are examples of how to use the export scripts:
 ### Export all Azure Products in USD
 
 ```console
-poetry run python export_prices_all_usd.py
+uv run python export_prices_all_usd.py
 ```
 
 This creates the file `prices_USD.csv` with all Azure product prices.
@@ -143,11 +131,11 @@ This creates the file `prices_USD.csv` with all Azure product prices.
 ### Export prices for Virtual Machines with filters
 
 ```console
-poetry run python export_prices_vm_usd.py
+uv run python export_prices_vm_usd.py
 ```
 
 ```console
-poetry run python export_prices_with_filter_and_multiple_currencies.py
+uv run python export_prices_with_filter_and_multiple_currencies.py
 ```
 
 ### Available Export Scripts
@@ -165,7 +153,7 @@ poetry run python export_prices_with_filter_and_multiple_currencies.py
 The `export_fxrates.py` script calculates foreign exchange rates by comparing Azure retail prices across different currencies:
 
 ```console
-poetry run python export_fxrates.py
+uv run python export_fxrates.py
 ```
 
 This creates the file `fxrates_usd.csv` with calculated exchange rates for multiple currencies.
@@ -218,12 +206,12 @@ azureretailprices-exporter/
 │   ├── azureapi_modern.py   # Class-based API client example
 │   └── tests/               # Unit tests
 ├── export_*.py              # Example export scripts
-├── pyproject.toml           # Poetry dependencies and configuration
-├── poetry.lock              # Locked dependency versions
+├── pyproject.toml           # Project dependencies and configuration
+├── uv.lock                  # Locked dependency versions
 └── .vscode/                 # VS Code configuration
     ├── settings.json        # Python interpreter settings
     ├── launch.json          # Debug configurations
-    ├── tasks.json           # Poetry tasks
+    ├── tasks.json           # uv tasks
     └── extensions.json      # Recommended extensions
 ```
 
@@ -260,63 +248,7 @@ The modernized codebase includes comprehensive error handling:
 
 ## Development
 
-### VS Code Setup
-
-The project includes VS Code configuration for optimal development experience:
-
-- **Python interpreter** automatically configured for Poetry virtual environment
-- **Debug configurations** for running export scripts
-- **Tasks** for common operations:
-  - Poetry dependency management
-  - Running tests with pytest
-  - Code formatting with Black
-  - Linting and fixing with Ruff
-- **Extensions** recommendations for Python development (Black, Ruff, Pylance)
-
-### Running Tests
-
-```console
-poetry run pytest
-```
-
-### Adding Dependencies
-
-```console
-poetry add package-name              # Production dependency
-poetry add --group dev package-name  # Development dependency
-```
-
-### Code Quality
-
-The project uses modern Python development tools for code quality:
-
-- **[Black](https://black.readthedocs.io/)** - Uncompromising code formatter
-- **[Ruff](https://docs.astral.sh/ruff/)** - Extremely fast Python linter (replaces flake8, isort, pyupgrade)
-- **Type hints** for better IDE support and static analysis
-- **Structured logging** for debugging and monitoring
-- **Comprehensive error handling** for robustness
-- **Environment-based configuration** for flexibility
-
-**Code Formatting:**
-
-```console
-poetry run black api/ export_prices_*.py    # Format all Python files
-```
-
-**Linting:**
-
-```console
-poetry run ruff check .                      # Check for linting issues
-poetry run ruff check --fix .                # Auto-fix issues where possible
-```
-
-**VS Code Integration:**
-
-- Automatic formatting on save with Black
-- Real-time linting with Ruff
-- Code actions on save (organize imports, fix issues)
-
-The project follows **Python 3.10+** conventions including modern union syntax (`str | None` instead of `Optional[str]`).
+Developer setup, tooling, and code quality workflows are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Continuous Integration
 
@@ -331,7 +263,7 @@ The project uses **GitHub Actions** for automated testing and code quality check
 ### 🔍 **Code Quality Enforcement**
 
 - **Linting**: Ruff checks for code quality and style
-- **Formatting**: Black ensures consistent code formatting
+- **Formatting**: Ruff enforces consistent code formatting
 - **Type Checking**: Pyright validates type annotations
 
 ### 🔒 **Security Scanning**
@@ -348,30 +280,7 @@ The badges at the top of this README show the current status of:
 - [![Code Quality](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml) - Linting, formatting, and type checking
 - [![CodeQL](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml) - Security vulnerability scanning
 
-### 🔧 **Contributing Requirements**
-
-Before submitting a pull request, ensure your code passes all checks:
-
-```console
-# Run all quality checks locally
-poetry run pytest                    # Run tests
-poetry run ruff check .              # Check linting
-poetry run black --check .           # Check formatting
-poetry run pyright                   # Type checking (optional)
-```
-
-**Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!
-
-### 📝 **Contributing Guidelines**
-
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
-
-- Setting up your development environment
-- Our development workflow
-- Pull request process
-- Coding standards and best practices
-
-Also review our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+For contribution requirements and developer workflows, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Automated Exports
 

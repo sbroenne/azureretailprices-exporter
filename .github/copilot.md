@@ -9,7 +9,7 @@ This is a **modern Python project** that retrieves Azure Retail Prices from the 
 **Key characteristics:**
 - Python 3.10+ with modern type hints and syntax
 - Production-ready with comprehensive testing, linting, and CI/CD
-- Developer-friendly with VS Code integration and Poetry dependency management
+- Developer-friendly with VS Code integration and uv dependency management
 - Automated daily price exports via GitHub Actions
 
 ### What You Should Know
@@ -30,20 +30,20 @@ This is a **modern Python project** that retrieves Azure Retail Prices from the 
 - Follow **PEP 8** conventions
 
 ### Code Formatting
-- **Black** is the code formatter (line-length: 88)
-- Format code with: `poetry run black api/ export_prices_*.py`
-- All code must pass Black formatting checks
+- **Ruff** is the code formatter (line-length: 88)
+- Format code with: `uv run ruff format api/ export_prices_*.py`
+- All code must pass Ruff formatting checks
 
 ### Linting
 - **Ruff** is the linter (replaces flake8, isort, pyupgrade)
-- Run linting with: `poetry run ruff check .`
-- Auto-fix issues with: `poetry run ruff check --fix .`
+- Run linting with: `uv run ruff check .`
+- Auto-fix issues with: `uv run ruff check --fix .`
 - Ruff rules enabled: pycodestyle (E/W), pyflakes (F), isort (I), flake8-bugbear (B), flake8-comprehensions (C4), pyupgrade (UP)
 - Maximum complexity: 10 (McCabe)
 
 ### Type Checking
 - **Pyright** is used for type checking (optional but recommended)
-- Run with: `poetry run pyright`
+- Run with: `uv run pyright`
 - Target version: Python 3.10
 
 ### Logging
@@ -66,8 +66,8 @@ azureretailprices-exporter/
 │   └── tests/               # Unit tests
 │       └── test_azureapi.py
 ├── export_*.py              # Example export scripts
-├── pyproject.toml           # Poetry dependencies and config
-├── poetry.lock              # Locked dependency versions
+├── pyproject.toml           # Project dependencies and config
+├── uv.lock                  # Locked dependency versions
 └── .vscode/                 # VS Code configuration
 ```
 
@@ -83,15 +83,15 @@ azureretailprices-exporter/
 
 ### Development Dependencies
 - **pytest** - Testing framework
-- **black** - Code formatter
+- **ruff** - Linter and formatter
 - **ruff** - Linter
 - **pyright** - Type checker (added as needed)
 
 ### Managing Dependencies
-- Add production dependency: `poetry add package-name`
-- Add dev dependency: `poetry add --group dev package-name`
-- Install all dependencies: `poetry install`
-- Activate environment: `poetry shell`
+- Add production dependency: `uv add package-name`
+- Add dev dependency: `uv add --dev package-name`
+- Install all dependencies: `uv sync`
+- Use `uv run <cmd>` for execution (no activation required)
 
 ## Testing
 
@@ -99,10 +99,10 @@ azureretailprices-exporter/
 - Use **pytest** for all tests
 - Test files should be in `api/tests/` directory
 - Test files should follow the pattern `test_*.py`
-- Run tests with: `poetry run pytest`
+- Run tests with: `uv run pytest`
 
 ### Coverage
-- Generate coverage with: `poetry run pytest --cov=api --cov-report=xml --cov-report=term-missing`
+- Generate coverage with: `uv run pytest --cov=api --cov-report=xml --cov-report=term-missing`
 - Aim for high test coverage on core functionality
 
 ### Testing Best Practices
@@ -127,13 +127,13 @@ azureretailprices-exporter/
 ## VS Code Integration
 
 The project includes comprehensive VS Code configuration:
-- **Python interpreter** automatically configured for Poetry virtual environment
+- **Python interpreter** automatically configured for uv virtual environment
 - **Debug configurations** for running export scripts
 - **Tasks** for common operations (dependency management, testing, formatting, linting)
-- **Extensions** recommendations: Black, Ruff, Pylance
+- **Extensions** recommendations: Ruff, Pylance
 
 ### Auto-formatting on Save
-- Files are automatically formatted with Black on save
+- Files are automatically formatted with Ruff on save
 - Real-time linting with Ruff
 - Code actions on save (organize imports, fix issues)
 
@@ -143,17 +143,17 @@ The project includes comprehensive VS Code configuration:
 All workflows are in `.github/workflows/`:
 
 1. **ci.yml** - Automated testing on Python 3.10, 3.11, and 3.12
-2. **quality.yml** - Code quality checks (Ruff, Black, Pyright, coverage)
+2. **quality.yml** - Code quality checks (Ruff, Pyright, coverage)
 3. **codeql-analysis.yml** - Security scanning with CodeQL
 4. **export-prices.yml** - Automated daily price exports at 6 AM UTC
 
 ### Contributing Requirements
 Before submitting a pull request, ensure code passes all checks:
 ```console
-poetry run pytest                    # Run tests
-poetry run ruff check .              # Check linting
-poetry run black --check .           # Check formatting
-poetry run pyright                   # Type checking (optional)
+uv run pytest                    # Run tests
+uv run ruff check .              # Check linting
+uv run ruff format --check .           # Check formatting
+uv run pyright                   # Type checking (optional)
 ```
 
 ### Branch Strategy
@@ -220,29 +220,29 @@ except requests.exceptions.RequestException as e:
 
 ### Running Export Scripts
 ```console
-poetry run python export_prices_all_usd.py
-poetry run python export_prices_vm_usd.py
+uv run python export_prices_all_usd.py
+uv run python export_prices_vm_usd.py
 ```
 
 ### Formatting and Linting
 ```console
-poetry run black .                   # Format all files
-poetry run ruff check --fix .        # Fix linting issues
-poetry run ruff check .              # Check for issues
+uv run ruff format .                   # Format all files
+uv run ruff check --fix .        # Fix linting issues
+uv run ruff check .              # Check for issues
 ```
 
 ### Testing
 ```console
-poetry run pytest                    # Run all tests
-poetry run pytest -v                 # Verbose output
-poetry run pytest api/tests/test_azureapi.py  # Run specific test file
+uv run pytest                    # Run all tests
+uv run pytest -v                 # Verbose output
+uv run pytest api/tests/test_azureapi.py  # Run specific test file
 ```
 
 ## Important Notes for Copilot
 
 1. **Always use modern Python 3.10+ syntax** - No legacy type hints or imports
 2. **Type everything** - Use type hints for all parameters and return values
-3. **Format with Black** - Code must pass Black formatting (line-length: 88)
+3. **Format with Ruff** - Code must pass Ruff formatting (line-length: 88)
 4. **Lint with Ruff** - Code must pass all Ruff checks
 5. **Write tests** - Include unit tests for new functionality
 6. **Use structured logging** - Never use print() for logging in production code
@@ -315,10 +315,10 @@ poetry run pytest api/tests/test_azureapi.py  # Run specific test file
 
 Before marking work as complete, verify:
 
-1. ✅ All tests pass: `poetry run pytest`
-2. ✅ Code is properly formatted: `poetry run black --check .`
-3. ✅ No linting issues: `poetry run ruff check .`
-4. ✅ Type checking passes (if applicable): `poetry run pyright`
+1. ✅ All tests pass: `uv run pytest`
+2. ✅ Code is properly formatted: `uv run ruff format --check .`
+3. ✅ No linting issues: `uv run ruff check .`
+4. ✅ Type checking passes (if applicable): `uv run pyright`
 5. ✅ Manual testing completed for changed functionality
 6. ✅ Documentation updated (if needed)
 7. ✅ No unintended changes (review git diff)
@@ -363,35 +363,35 @@ When working on multiple issues or feedback items:
 
 ### Setup and Installation
 ```bash
-poetry install                     # Install all dependencies
-poetry shell                       # Activate virtual environment
+uv sync                     # Install all dependencies
+# Use `uv run <cmd>` for execution (no activation required)
 ```
 
 ### Running Tests and Quality Checks
 ```bash
 # Run all quality checks (do this before submitting PR)
-poetry run pytest                  # Tests
-poetry run black --check .         # Formatting check
-poetry run ruff check .            # Linting check
-poetry run pyright                 # Type checking (optional)
+uv run pytest                  # Tests
+uv run ruff format --check .         # Formatting check
+uv run ruff check .            # Linting check
+uv run pyright                 # Type checking (optional)
 
 # Auto-fix issues
-poetry run black .                 # Format code
-poetry run ruff check --fix .      # Fix auto-fixable linting issues
+uv run ruff format .                 # Format code
+uv run ruff check --fix .      # Fix auto-fixable linting issues
 ```
 
 ### Running Export Scripts
 ```bash
-poetry run python export_prices_all_usd.py
-poetry run python export_prices_vm_usd.py
+uv run python export_prices_all_usd.py
+uv run python export_prices_vm_usd.py
 ```
 
 ### Managing Dependencies
 ```bash
-poetry add package-name              # Add production dependency
-poetry add --group dev package-name  # Add development dependency
-poetry update                        # Update dependencies
-poetry show                          # List installed packages
+uv add package-name              # Add production dependency
+uv add --dev package-name  # Add development dependency
+uv lock --upgrade                 # Update dependencies
+uv pip list                       # List installed packages
 ```
 
 ### Git Workflow

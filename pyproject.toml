@@ -1,44 +1,29 @@
-[tool.poetry]
+[project]
 name = "azureretailprices-exporter"
 version = "0.1.0"
 description = "Export Azure Retail Prices as JSON and convert them to CSV"
-authors = ["https://github.com/sbroenne/azureretailprices-exporter"]
 readme = "README.md"
-packages = [{include = "api"}]
+requires-python = ">=3.10"
+authors = [{name = "sbroenne"}]
+dependencies = [
+    "pandas",
+    "requests",
+    "requests-cache",
+    "enlighten",
+    "pyarrow",
+    "numpy",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10"
-pandas = "*"
-requests = "*"
-requests-cache = "*"
-enlighten = "*"
-pyarrow = "*"
-numpy = "*"
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2,<10.0.0",
+    "ruff>=0.14.14,<0.15.0",
+    "pyright>=1.1.408,<2.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0.2"
-black = "^26.1.0"
-ruff = "^0.15.0"
-pyright = "^1.1.408"
-pytest-cov = "^7.0.0"
-
-[tool.black]
-line-length = 88
-target-version = ['py310']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
+[tool.hatch.build.targets.wheel]
+packages = ["api"]
 
 [tool.ruff]
 line-length = 88
@@ -55,7 +40,7 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
+    "E501",  # line too long, handled by formatter
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
@@ -72,5 +57,5 @@ reportUnknownArgumentType = false
 pythonVersion = "3.10"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

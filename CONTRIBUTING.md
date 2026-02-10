@@ -21,7 +21,7 @@ This project adheres to a Code of Conduct that all contributors are expected to 
 ### Prerequisites
 
 - Python 3.10 or higher
-- [Poetry](https://python-poetry.org/) for dependency management
+- [uv](https://docs.astral.sh/uv/) for dependency management
 - Git for version control
 
 ### Setting Up Your Development Environment
@@ -39,19 +39,19 @@ This project adheres to a Code of Conduct that all contributors are expected to 
    git remote add upstream https://github.com/sbroenne/azureretailprices-exporter.git
    ```
 
-4. **Install Poetry** (if not already installed):
+4. **Install uv** (if not already installed):
    ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
 5. **Install dependencies**:
    ```bash
-   poetry install
+   uv sync
    ```
 
-6. **Activate the virtual environment**:
+6. **Run commands through uv**:
    ```bash
-   poetry shell
+   uv run pytest
    ```
 
 ### VS Code Setup (Recommended)
@@ -64,6 +64,21 @@ This project includes VS Code configuration for an optimal development experienc
 - **Extensions** recommendations will be prompted on first open
 
 Simply open the project in VS Code and install the recommended extensions when prompted.
+
+### Development Tools
+
+#### Adding Dependencies
+
+```bash
+uv add package-name                  # Production dependency
+uv add --dev package-name            # Development dependency
+```
+
+#### VS Code Integration
+
+- Automatic formatting on save with Ruff
+- Real-time linting with Ruff
+- Code actions on save (organize imports, fix issues)
 
 ## Development Workflow
 
@@ -109,26 +124,26 @@ Ensure your code passes all quality checks:
 
 ```bash
 # Run tests
-poetry run pytest
+uv run pytest
 
 # Check linting
-poetry run ruff check .
+uv run ruff check .
 
 # Check code formatting
-poetry run black --check .
+uv run ruff format --check .
 
 # Optional: Type checking
-poetry run pyright
+uv run pyright
 ```
 
 **Fix any issues** before submitting your PR:
 
 ```bash
 # Auto-fix linting issues
-poetry run ruff check --fix .
+uv run ruff check --fix .
 
 # Auto-format code
-poetry run black .
+uv run ruff format .
 ```
 
 ### Submitting a Pull Request
@@ -163,7 +178,7 @@ poetry run black .
 
 - **Python 3.10+** syntax (modern union types, etc.)
 - **Type hints** for all functions and methods
-- **Black** for code formatting (line length: 88)
+- **Ruff** for code formatting (line length: 88)
 - **Ruff** for linting
 - **Structured logging** instead of print statements
 
@@ -171,8 +186,7 @@ poetry run black .
 
 The project uses the following tools to maintain code quality:
 
-- **[Black](https://black.readthedocs.io/)** - Code formatter
-- **[Ruff](https://docs.astral.sh/ruff/)** - Fast Python linter
+- **[Ruff](https://docs.astral.sh/ruff/)** - Linter and formatter
 - **[Pyright](https://github.com/microsoft/pyright)** - Type checker (optional)
 - **[pytest](https://pytest.org/)** - Testing framework
 
@@ -187,10 +201,10 @@ The project uses the following tools to maintain code quality:
 
 ### Code Formatting
 
-Format your code with Black before committing:
+Format your code with Ruff before committing:
 
 ```bash
-poetry run black api/ export_prices_*.py
+uv run ruff format api/ export_prices_*.py
 ```
 
 ### Linting
@@ -198,8 +212,8 @@ poetry run black api/ export_prices_*.py
 Check and fix linting issues:
 
 ```bash
-poetry run ruff check .
-poetry run ruff check --fix .  # Auto-fix where possible
+uv run ruff check .
+uv run ruff check --fix .  # Auto-fix where possible
 ```
 
 ## Testing
@@ -209,19 +223,19 @@ poetry run ruff check --fix .  # Auto-fix where possible
 Run the test suite:
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
 Run tests with coverage:
 
 ```bash
-poetry run pytest --cov=api --cov-report=term-missing
+uv run pytest --cov=api --cov-report=term-missing
 ```
 
 Run specific tests:
 
 ```bash
-poetry run pytest api/tests/test_azureapi.py::test_name
+uv run pytest api/tests/test_azureapi.py::test_name
 ```
 
 ### Writing Tests
