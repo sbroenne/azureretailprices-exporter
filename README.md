@@ -202,8 +202,7 @@ The project structure is organized as follows:
 ```text
 azureretailprices-exporter/
 ├── api/
-│   ├── azureapi.py          # Main API client (modernized)
-│   ├── azureapi_modern.py   # Class-based API client example
+│   ├── azureapi.py          # Main API client
 │   └── tests/               # Unit tests
 ├── export_*.py              # Example export scripts
 ├── pyproject.toml           # Project dependencies and configuration
@@ -229,7 +228,7 @@ The script uses [requests-cache](https://pypi.org/project/requests-cache) to tem
 
 ## Error Handling
 
-The modernized codebase includes comprehensive error handling:
+The codebase includes comprehensive error handling:
 
 - ✅ **HTTP errors** - Graceful handling of API failures with proper status codes
 - ✅ **Rate limiting (HTTP 429)** - Automatic retry with exponential backoff using urllib3.Retry
