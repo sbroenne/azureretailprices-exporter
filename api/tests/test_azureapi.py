@@ -146,6 +146,8 @@ def test_http_429_retry_handling():
     }
 
     with patch("requests_cache.CachedSession") as mock_session_class:
+        # Reset the module-level session so _get_session() creates a new one via the mock
+        azureapi._session = None
         mock_session = Mock()
         mock_session_class.return_value = mock_session
 
@@ -167,6 +169,9 @@ def test_http_429_retry_handling():
             # It's OK if this fails in this mock scenario as we're just verifying
             # the structure is in place
             pass
+        finally:
+            # Reset session so subsequent tests use a real cached session
+            azureapi._session = None
 
 
 def test_retry_configuration():

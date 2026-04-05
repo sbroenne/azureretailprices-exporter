@@ -28,6 +28,59 @@ MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 RETRY_BACKOFF_FACTOR = float(os.getenv("RETRY_BACKOFF_FACTOR", "2.0"))
 RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]  # HTTP status codes to retry
 
+# Module-level cached session (lazily initialized to enable test patching)
+_session: requests.Session | None = None
+
+
+def _get_session() -> requests.Session:
+    """Return the module-level cached HTTP session, creating it on first call.
+
+    The session is created once and reused across all calls to avoid the
+    overhead of opening a new SQLite cache connection on every request.
+    """
+    global _session
+    if _session is None:
+        cached = requests_cache.CachedSession(
+            "azure_cache", expire_after=timedelta(days=CACHE_EXPIRE_DAYS)
+        )
+        retry_strategy = Retry(
+            total=MAX_RETRIES,
+            status_forcelist=RETRY_STATUS_FORCELIST,
+            backoff_factor=RETRY_BACKOFF_FACTOR,
+            respect_retry_after_header=True,
+            allowed_methods=[
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "HEAD",
+                "OPTIONS",
+                "TRACE",
+            ],
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        cached.mount("http://", adapter)
+        cached.mount("https://", adapter)
+        _session = cast(requests.Session, cached)
+        logger.debug(
+            "Created session: max_retries=%d, backoff_factor=%.1f, status_forcelist=%s",
+            MAX_RETRIES,
+            RETRY_BACKOFF_FACTOR,
+            RETRY_STATUS_FORCELIST,
+        )
+    return _session
+
+
+def _create_match_key(df: pd.DataFrame) -> pd.Series:  # type: ignore[type-arg]
+    """Build a product match key from armSkuName, armRegionName, and meterId."""
+    return (
+        df["armSkuName"].astype(str)
+        + "|"
+        + df["armRegionName"].astype(str)
+        + "|"
+        + df["meterId"].astype(str)
+    )
+
 
 def get_price_data(
     currency_code: str, results_filter: str = "", max_pages: int = 9999999
@@ -46,43 +99,11 @@ def get_price_data(
         List[Dict[str, Any]]: Retail prices as a list of dictionaries
     """
 
-    # Use requests_cache to temporarily cache results for one day
-    # Useful if the script stops unexpectedly and you need to resume
-    # Cast the cached session to requests.Session for type safety
-    session = cast(
-        requests.Session,
-        requests_cache.CachedSession(
-            "azure_cache", expire_after=timedelta(days=CACHE_EXPIRE_DAYS)
-        ),
-    )
-
-    # Configure retry strategy for handling rate limiting (HTTP 429) and server errors
-    # Uses exponential backoff: wait times will be 2s, 4s, 8s, 16s, 32s (with default settings)
-    retry_strategy = Retry(
-        total=MAX_RETRIES,
-        status_forcelist=RETRY_STATUS_FORCELIST,
-        backoff_factor=RETRY_BACKOFF_FACTOR,
-        # Respect Retry-After header for 429 responses
-        respect_retry_after_header=True,
-        # Only retry on GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE methods
-        allowed_methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "TRACE"],
-    )
-
-    # Mount the retry adapter to both http and https
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-
-    logger.debug(
-        "Configured retry strategy: max_retries=%d, backoff_factor=%.1f, status_forcelist=%s",
-        MAX_RETRIES,
-        RETRY_BACKOFF_FACTOR,
-        RETRY_STATUS_FORCELIST,
-    )
+    session = _get_session()
 
     # Construct the base API url with configurable API version
     base_url = "https://prices.azure.com/api/retail/prices"
-    api_url = f"{base_url}?api-version={API_VERSION}&currencyCode='{currency_code}''"
+    api_url = f"{base_url}?api-version={API_VERSION}&currencyCode='{currency_code}'"
 
     # Add optional filter argument
     if results_filter:
@@ -223,14 +244,7 @@ def calculate_fx_rates(
         return pd.DataFrame({"currency": [], "fxRate": []})
 
     # Use a unique key to match products across currencies
-    # We'll use a combination of fields that should uniquely identify a product
-    base_df["matchKey"] = (
-        base_df["armSkuName"].astype(str)
-        + "|"
-        + base_df["armRegionName"].astype(str)
-        + "|"
-        + base_df["meterId"].astype(str)
-    )
+    base_df["matchKey"] = _create_match_key(base_df)
 
     fx_results: list[dict[str, Any]] = []
 
@@ -249,13 +263,7 @@ def calculate_fx_rates(
                 continue
 
             # Create match key for target currency
-            target_df["matchKey"] = (
-                target_df["armSkuName"].astype(str)
-                + "|"
-                + target_df["armRegionName"].astype(str)
-                + "|"
-                + target_df["meterId"].astype(str)
-            )
+            target_df["matchKey"] = _create_match_key(target_df)
 
             # Merge on the match key to find common products
             merged_df = base_df.merge(
