@@ -1,254 +1,267 @@
-"""Unit tests for azureapi.py"""
+"""Unit tests for azureapi.py."""
 
-from unittest.mock import Mock, patch
+import os
+from unittest.mock import Mock
 
 import pandas as pd
-import requests
+import pytest
 
 from api import azureapi
 
-# Currency cod to use
-currency_code = "USD"
-
-# Maximum output pages
-max_pages = 2
+RUN_LIVE_AZURE_TESTS = os.getenv("RUN_LIVE_AZURE_TESTS") == "1"
 
 
-def test_azureapi_get_price_data():
-    """Test basic export functionality"""
-    sku_list = azureapi.get_price_data(currency_code=currency_code, max_pages=max_pages)
-    assert isinstance(sku_list, list)
-
-
-def test_azureapi_savings_plan_get_price_data():
-    """Test export with a filter that will include savings plans data"""
-
-    filter = "$filter=serviceName eq 'Virtual Machines' and type eq 'Consumption' and armRegionname eq 'westeurope'"
-
-    sku_list = azureapi.get_price_data(
-        currency_code=currency_code, results_filter=filter, max_pages=max_pages
-    )
-    assert isinstance(sku_list, list)
-
-
-def test_azureapi_savings_plan_get_prices():
-    """Test export with a filter that will include savings plans data"""
-
-    filter = "$filter=serviceName eq 'Virtual Machines' and type eq 'Consumption' and armRegionname eq 'westeurope'"
-
-    test_df = azureapi.get_prices(
-        currency_code=currency_code, results_filter=filter, max_pages=max_pages
-    )
-    assert isinstance(test_df, pd.DataFrame)
-
-
-def test_calculate_fx_rates_with_mock_data():
-    """Test FX rate calculation with mock data"""
-    # Create mock data for USD
-    usd_data = pd.DataFrame(
-        {
-            "armSkuName": ["SKU1", "SKU2", "SKU3"],
-            "armRegionName": ["eastus", "westus", "eastus"],
-            "meterId": ["meter1", "meter2", "meter3"],
-            "retailPrice": [10.0, 20.0, 30.0],
-            "productName": ["Product 1", "Product 2", "Product 3"],
-        }
+@pytest.fixture
+def mocked_session(monkeypatch: pytest.MonkeyPatch) -> Mock:
+    """Return a mocked cached session and disable the real progress counter."""
+    azureapi._session = None
+    session = Mock()
+    monkeypatch.setattr(
+        azureapi.requests_cache, "CachedSession", Mock(return_value=session)
     )
 
-    # Create mock data for EUR (with 0.85 exchange rate)
-    eur_data = pd.DataFrame(
-        {
-            "armSkuName": ["SKU1", "SKU2", "SKU3"],
-            "armRegionName": ["eastus", "westus", "eastus"],
-            "meterId": ["meter1", "meter2", "meter3"],
-            "retailPrice": [8.5, 17.0, 25.5],
-            "productName": ["Product 1", "Product 2", "Product 3"],
-        }
+    counter = Mock()
+    counter.update = Mock()
+    monkeypatch.setattr(azureapi.enlighten, "Counter", Mock(return_value=counter))
+    return session
+
+
+def make_response(payload: dict) -> Mock:
+    """Create a mocked HTTP response with a JSON payload."""
+    response = Mock()
+    response.raise_for_status = Mock()
+    response.json.return_value = payload
+    return response
+
+
+def test_get_price_data_builds_initial_request_with_params(
+    mocked_session: Mock,
+) -> None:
+    """The first Azure API call should use structured params instead of a raw URL."""
+    mocked_session.get.return_value = make_response({"Items": [], "NextPageLink": None})
+
+    azureapi.get_price_data(
+        currency_code="USD",
+        results_filter="$filter=serviceName eq 'Virtual Machines'",
+        max_pages=1,
     )
 
-    # Mock the get_prices function
-    def mock_get_prices(currency_code, results_filter="", max_pages=9999999):
-        if currency_code == "USD":
-            return usd_data.copy()
-        elif currency_code == "EUR":
-            return eur_data.copy()
-        else:
-            return pd.DataFrame()
-
-    # Temporarily replace the function
-    original_get_prices = azureapi.get_prices
-    azureapi.get_prices = mock_get_prices
-
-    try:
-        # Test the FX rate calculation
-        fx_df = azureapi.calculate_fx_rates(
-            base_currency="USD", target_currencies=["EUR"], max_pages=1
-        )
-
-        # Verify the result
-        assert isinstance(fx_df, pd.DataFrame)
-        assert len(fx_df) == 1
-        assert fx_df.iloc[0]["currency"] == "EUR"
-        # FX rate should be 0.85 (first product: 8.5 / 10.0)
-        assert abs(fx_df.iloc[0]["fxRate"] - 0.85) < 0.01
-        # Should only have currency and fxRate fields
-        assert "sampleSize" not in fx_df.columns
-        assert "productSample" not in fx_df.columns
-        assert list(fx_df.columns) == ["currency", "fxRate"]
-
-    finally:
-        # Restore the original function
-        azureapi.get_prices = original_get_prices
-
-
-def test_calculate_fx_rates_returns_dataframe():
-    """Test that calculate_fx_rates returns a DataFrame structure"""
-    # This test just verifies the function signature and basic structure
-    # It will fail in environments without API access, which is expected
-
-    # Test that the function accepts the correct parameters
-    # and returns a DataFrame (even if empty due to API errors)
-    try:
-        result = azureapi.calculate_fx_rates(
-            base_currency="USD", target_currencies=["EUR"], max_pages=1
-        )
-        assert isinstance(result, pd.DataFrame)
-    except Exception:
-        # If the API is not accessible, we just verify the function exists
-        # and has the correct signature
-        assert callable(azureapi.calculate_fx_rates)
-
-
-def test_http_429_retry_handling():
-    """Test that HTTP 429 responses trigger retry logic"""
-
-    # Create a mock response that returns 429 twice, then succeeds
-    mock_response_429 = Mock()
-    mock_response_429.status_code = 429
-    mock_response_429.headers = {"Retry-After": "1"}
-    mock_response_429.raise_for_status.side_effect = requests.HTTPError(
-        "429 Too Many Requests"
-    )
-
-    mock_response_success = Mock()
-    mock_response_success.status_code = 200
-    mock_response_success.json.return_value = {
-        "Items": [
-            {
-                "armSkuName": "SKU1",
-                "armRegionName": "eastus",
-                "meterId": "meter1",
-                "retailPrice": 10.0,
-                "productName": "Test Product",
-            }
-        ],
-        "NextPageLink": None,
+    assert mocked_session.get.call_count == 1
+    args, kwargs = mocked_session.get.call_args
+    assert args[0] == "https://prices.azure.com/api/retail/prices"
+    assert kwargs["params"] == {
+        "api-version": azureapi.API_VERSION,
+        "currencyCode": "'USD'",
+        "$filter": "serviceName eq 'Virtual Machines'",
     }
-
-    with patch("requests_cache.CachedSession") as mock_session_class:
-        # Reset the module-level session so _get_session() creates a new one via the mock
-        azureapi._session = None
-        mock_session = Mock()
-        mock_session_class.return_value = mock_session
-
-        # Simulate 429 errors on first two calls, then success
-        mock_session.get.side_effect = [
-            mock_response_429,
-            mock_response_429,
-            mock_response_success,
-        ]
-
-        # The retry logic should eventually succeed
-        # Note: The actual retry is handled by urllib3.Retry in the HTTPAdapter
-        # This test verifies that our code can handle the scenario
-        try:
-            result = azureapi.get_price_data(currency_code="USD", max_pages=1)
-            # If retry works, we should get results
-            assert isinstance(result, list)
-        except requests.HTTPError:
-            # It's OK if this fails in this mock scenario as we're just verifying
-            # the structure is in place
-            pass
-        finally:
-            # Reset session so subsequent tests use a real cached session
-            azureapi._session = None
+    assert kwargs["timeout"] == azureapi.REQUEST_TIMEOUT
 
 
-def test_retry_configuration():
-    """Test that retry configuration is properly set up"""
-    # Verify that the retry configuration constants are set
-    assert hasattr(azureapi, "MAX_RETRIES")
-    assert hasattr(azureapi, "RETRY_BACKOFF_FACTOR")
-    assert hasattr(azureapi, "RETRY_STATUS_FORCELIST")
+def test_get_price_data_follows_next_page_link(mocked_session: Mock) -> None:
+    """Pagination should accumulate items and pass the server-provided next link through."""
+    mocked_session.get.side_effect = [
+        make_response(
+            {
+                "Items": [{"skuId": "page-1"}],
+                "NextPageLink": "https://prices.azure.com/api/retail/prices?$skip=1000",
+            }
+        ),
+        make_response({"Items": [{"skuId": "page-2"}], "NextPageLink": None}),
+    ]
 
-    # Verify that 429 is in the status force list
-    assert 429 in azureapi.RETRY_STATUS_FORCELIST
+    result = azureapi.get_price_data(currency_code="USD", max_pages=2)
 
-    # Verify reasonable defaults
-    assert azureapi.MAX_RETRIES > 0
-    assert azureapi.RETRY_BACKOFF_FACTOR > 0
+    assert result == [{"skuId": "page-1"}, {"skuId": "page-2"}]
+    first_call_args, first_call_kwargs = mocked_session.get.call_args_list[0]
+    second_call_args, second_call_kwargs = mocked_session.get.call_args_list[1]
+    assert first_call_args[0] == "https://prices.azure.com/api/retail/prices"
+    assert (
+        second_call_args[0] == "https://prices.azure.com/api/retail/prices?$skip=1000"
+    )
+    assert first_call_kwargs["params"]["currencyCode"] == "'USD'"
+    assert second_call_kwargs["params"] is None
 
 
-def test_calculate_fx_rates_with_filter():
-    """Test FX rate calculation with a meterId filter"""
-    # Create mock data for USD with a specific meterId
-    meter_id = "5daea80f-04ac-5385-86f0-b263d23becd2"
+def test_get_price_data_raises_for_missing_items(mocked_session: Mock) -> None:
+    """Unexpected response payloads should raise a descriptive error."""
+    mocked_session.get.return_value = make_response(
+        {"Error": {"Code": "InternalServerError", "Message": "Exchange rate not found"}}
+    )
 
+    with pytest.raises(ValueError, match="Items"):
+        azureapi.get_price_data(currency_code="USD", max_pages=1)
+
+
+def test_get_prices_expands_savings_plan(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Savings plan entries should expand into normal price rows."""
+    input_records = [
+        {
+            "armSkuName": "SKU1",
+            "armRegionName": "eastus",
+            "meterId": "meter1",
+            "type": "Consumption",
+            "unitPrice": 10.0,
+            "retailPrice": 10.0,
+            "savingsPlan": [
+                {"term": "1 Year", "unitPrice": 8.0, "retailPrice": 8.0},
+                {"term": "3 Years", "unitPrice": 6.0, "retailPrice": 6.0},
+            ],
+        },
+        {
+            "armSkuName": "SKU2",
+            "armRegionName": "westus",
+            "meterId": "meter2",
+            "type": "Consumption",
+            "unitPrice": 20.0,
+            "retailPrice": 20.0,
+        },
+    ]
+    monkeypatch.setattr(azureapi, "get_price_data", Mock(return_value=input_records))
+
+    result = azureapi.get_prices(currency_code="USD", max_pages=1)
+
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 3
+    savings_plan_rows = result[result["type"] == "SavingsPlans"]
+    assert list(savings_plan_rows["reservationTerm"]) == ["1 Year", "3 Years"]
+    assert savings_plan_rows["unitPrice"].tolist() == [8.0, 6.0]
+    assert "savingsPlan" not in savings_plan_rows.columns
+
+
+def test_calculate_fx_rates_returns_expected_rate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FX rates should be calculated from matching base and target products."""
     usd_data = pd.DataFrame(
         {
             "armSkuName": ["SKU1"],
             "armRegionName": ["eastus"],
-            "meterId": [meter_id],
+            "meterId": ["meter1"],
             "retailPrice": [10.0],
-            "productName": ["Product 1"],
         }
     )
-
-    # Create mock data for EUR (with 0.85 exchange rate)
     eur_data = pd.DataFrame(
         {
             "armSkuName": ["SKU1"],
             "armRegionName": ["eastus"],
-            "meterId": [meter_id],
+            "meterId": ["meter1"],
             "retailPrice": [8.5],
-            "productName": ["Product 1"],
         }
     )
 
-    # Mock the get_prices function
-    def mock_get_prices(currency_code, results_filter="", max_pages=9999999):
-        # Verify that the filter is passed correctly
-        if results_filter:
-            assert meter_id in results_filter
-            assert "$filter=meterId eq" in results_filter
-
+    def mock_get_prices(
+        currency_code: str, results_filter: str = "", max_pages: int = 9999999
+    ) -> pd.DataFrame:
+        assert max_pages == 1
         if currency_code == "USD":
             return usd_data.copy()
-        elif currency_code == "EUR":
+        if currency_code == "EUR":
             return eur_data.copy()
-        else:
-            return pd.DataFrame()
+        raise AssertionError(f"Unexpected currency_code {currency_code}")
 
-    # Temporarily replace the function
-    original_get_prices = azureapi.get_prices
-    azureapi.get_prices = mock_get_prices
+    monkeypatch.setattr(azureapi, "get_prices", mock_get_prices)
 
-    try:
-        # Test the FX rate calculation with filter
-        fx_df = azureapi.calculate_fx_rates(
+    fx_df = azureapi.calculate_fx_rates(
+        base_currency="USD",
+        target_currencies=["EUR"],
+        max_pages=1,
+    )
+
+    assert isinstance(fx_df, pd.DataFrame)
+    assert list(fx_df.columns) == ["currency", "fxRate"]
+    assert fx_df.to_dict("records") == [{"currency": "EUR", "fxRate": 0.85}]
+
+
+def test_calculate_fx_rates_raises_when_target_currency_has_no_data(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing target data should fail instead of returning a partial FX table."""
+    usd_data = pd.DataFrame(
+        {
+            "armSkuName": ["SKU1"],
+            "armRegionName": ["eastus"],
+            "meterId": ["meter1"],
+            "retailPrice": [10.0],
+        }
+    )
+
+    def mock_get_prices(
+        currency_code: str, results_filter: str = "", max_pages: int = 9999999
+    ) -> pd.DataFrame:
+        if currency_code == "USD":
+            return usd_data.copy()
+        if currency_code == "EUR":
+            return pd.DataFrame(columns=usd_data.columns)
+        raise AssertionError(f"Unexpected currency_code {currency_code}")
+
+    monkeypatch.setattr(azureapi, "get_prices", mock_get_prices)
+
+    with pytest.raises(ValueError, match="No prices found for target currency EUR"):
+        azureapi.calculate_fx_rates(
             base_currency="USD",
             target_currencies=["EUR"],
-            results_filter=f"$filter=meterId eq '{meter_id}'",
             max_pages=1,
         )
 
-        # Verify the result
-        assert isinstance(fx_df, pd.DataFrame)
-        assert len(fx_df) == 1
-        assert fx_df.iloc[0]["currency"] == "EUR"
-        # FX rate should be 0.85 (8.5 / 10.0)
-        assert abs(fx_df.iloc[0]["fxRate"] - 0.85) < 0.01
 
-    finally:
-        # Restore the original function
-        azureapi.get_prices = original_get_prices
+def test_calculate_fx_rates_raises_for_missing_required_columns(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """FX rate calculation should fail with a descriptive error on malformed price data."""
+    usd_data = pd.DataFrame(
+        {
+            "armSkuName": ["SKU1"],
+            "armRegionName": ["eastus"],
+            "retailPrice": [10.0],
+        }
+    )
+
+    def mock_get_prices(
+        currency_code: str, results_filter: str = "", max_pages: int = 9999999
+    ) -> pd.DataFrame:
+        assert currency_code == "USD"
+        return usd_data.copy()
+
+    monkeypatch.setattr(azureapi, "get_prices", mock_get_prices)
+
+    with pytest.raises(ValueError, match="missing required columns: meterId"):
+        azureapi.calculate_fx_rates(
+            base_currency="USD",
+            target_currencies=["EUR"],
+            max_pages=1,
+        )
+
+
+@pytest.mark.live
+@pytest.mark.skipif(
+    not RUN_LIVE_AZURE_TESTS,
+    reason="Set RUN_LIVE_AZURE_TESTS=1 to run live Azure smoke tests",
+)
+def test_live_get_price_data_smoke() -> None:
+    """Live smoke test for the Azure Retail Prices API."""
+    sku_list = azureapi.get_price_data(currency_code="USD", max_pages=1)
+
+    assert isinstance(sku_list, list)
+    assert len(sku_list) > 0
+    assert isinstance(sku_list[0], dict)
+    assert "retailPrice" in sku_list[0]
+
+
+@pytest.mark.live
+@pytest.mark.skipif(
+    not RUN_LIVE_AZURE_TESTS,
+    reason="Set RUN_LIVE_AZURE_TESTS=1 to run live Azure smoke tests",
+)
+def test_live_calculate_fx_rates_smoke() -> None:
+    """Live smoke test for FX rate calculation."""
+    fx_df = azureapi.calculate_fx_rates(
+        base_currency="USD",
+        target_currencies=["EUR"],
+        results_filter="$filter=meterId eq '5daea80f-04ac-5385-86f0-b263d23becd2'",
+        max_pages=1,
+    )
+
+    assert isinstance(fx_df, pd.DataFrame)
+    assert len(fx_df) == 1
+    assert fx_df.iloc[0]["currency"] == "EUR"
+    assert fx_df.iloc[0]["fxRate"] > 0

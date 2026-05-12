@@ -47,6 +47,15 @@ fx_df = azureapi.calculate_fx_rates(
     results_filter=f"$filter=meterId eq '{METER_ID}'",
 )
 
+returned_currencies = set(fx_df["currency"].tolist()) if "currency" in fx_df else set()
+missing_currencies = sorted(set(TARGET_CURRENCIES).difference(returned_currencies))
+if missing_currencies:
+    missing_currencies_text = ", ".join(missing_currencies)
+    raise RuntimeError(
+        f"FX export aborted because these currencies were not calculated: "
+        f"{missing_currencies_text}"
+    )
+
 # Export to CSV
 export_file = "fxrates_usd.csv"
 print(f"Exporting FX rates to {export_file}")

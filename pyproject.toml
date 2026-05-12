@@ -56,6 +56,11 @@ reportUnknownMemberType = false
 reportUnknownArgumentType = false
 pythonVersion = "3.10"
 
+[tool.pytest.ini_options]
+markers = [
+    "live: smoke tests that call the live Azure Retail Prices API",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
