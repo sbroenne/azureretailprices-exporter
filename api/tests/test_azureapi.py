@@ -14,6 +14,7 @@ RUN_LIVE_AZURE_TESTS = os.getenv("RUN_LIVE_AZURE_TESTS") == "1"
 @pytest.fixture
 def mocked_session(monkeypatch: pytest.MonkeyPatch) -> Mock:
     """Return a mocked cached session and disable the real progress counter."""
+    azureapi._session = None
     session = Mock()
     monkeypatch.setattr(
         azureapi.requests_cache, "CachedSession", Mock(return_value=session)

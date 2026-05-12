@@ -31,7 +31,7 @@ wheels = [
 
 [[package]]
 name = "azureretailprices-exporter"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "enlighten" },
@@ -65,9 +65,9 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pyright", specifier = ">=1.1.408,<2.0.0" },
-    { name = "pytest", specifier = ">=9.0.2,<10.0.0" },
-    { name = "pytest-cov", specifier = ">=7.0.0,<8.0.0" },
-    { name = "ruff", specifier = ">=0.14.14,<0.16.0" },
+    { name = "pytest", specifier = ">=9.0.3,<10.0.0" },
+    { name = "pytest-cov", specifier = ">=7.1.0,<8.0.0" },
+    { name = "ruff", specifier = ">=0.14.14,<0.17.0" },
 ]
 
 [[package]]

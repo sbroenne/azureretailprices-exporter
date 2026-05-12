@@ -1,12 +1,12 @@
+"""Export Azure Retail Prices in USD to JSON format."""
+
 import api.azureapi as azureapi
 
-# Exports Azure Retail Prices in USD
-
 # Currency code(s) to use
-currency_list = ["USD"]
+CURRENCY_LIST = ["USD"]
 
 ## Loop through the currencies
-for currency_code in currency_list:
+for currency_code in CURRENCY_LIST:
     export_df = azureapi.get_prices(currency_code)
 
     # Export to Json
