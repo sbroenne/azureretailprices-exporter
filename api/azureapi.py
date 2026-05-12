@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import timedelta
 from typing import Any, cast
+from urllib.parse import parse_qsl
 
 import enlighten  # pyright: ignore[reportMissingTypeStubs]
 import pandas as pd
@@ -27,6 +28,74 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 RETRY_BACKOFF_FACTOR = float(os.getenv("RETRY_BACKOFF_FACTOR", "2.0"))
 RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]  # HTTP status codes to retry
+REQUIRED_PRICE_COLUMNS = {"armSkuName", "armRegionName", "meterId", "retailPrice"}
+
+
+def _build_initial_request_params(
+    currency_code: str, results_filter: str
+) -> dict[str, str]:
+    """Build the initial request parameters for the Azure Retail Prices API."""
+    params = {
+        "api-version": API_VERSION,
+        "currencyCode": f"'{currency_code}'",
+    }
+
+    if not results_filter:
+        return params
+
+    filter_params = dict(parse_qsl(results_filter.lstrip("?"), keep_blank_values=True))
+    if not filter_params:
+        raise ValueError(
+            'results_filter must be a query string fragment like "$filter=..."'
+        )
+
+    params.update(filter_params)
+    return params
+
+
+def _extract_page_data(
+    result_json: Any, page_counter: int
+) -> tuple[list[dict[str, Any]], str | None]:
+    """Validate and extract Azure API page data."""
+    if not isinstance(result_json, dict):
+        raise ValueError(
+            f"Unexpected response type for page {page_counter}: "
+            f"{type(result_json).__name__}"
+        )
+
+    items = result_json.get("Items")
+    if not isinstance(items, list):
+        raise ValueError(
+            f"Azure API response for page {page_counter} did not contain a valid "
+            f"'Items' list: {result_json}"
+        )
+
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            raise ValueError(
+                f"Azure API response for page {page_counter} contained a non-object "
+                f"item at index {index}: {item!r}"
+            )
+
+    next_page_link = result_json.get("NextPageLink")
+    if next_page_link is not None and not isinstance(next_page_link, str):
+        raise ValueError(
+            f"Azure API response for page {page_counter} contained an invalid "
+            f"'NextPageLink': {next_page_link!r}"
+        )
+
+    return items, next_page_link
+
+
+def _ensure_required_price_columns(price_df: pd.DataFrame, currency_code: str) -> None:
+    """Ensure price data contains the columns required for FX calculations."""
+    missing_columns = sorted(REQUIRED_PRICE_COLUMNS.difference(price_df.columns))
+    if missing_columns:
+        missing_columns_text = ", ".join(missing_columns)
+        raise ValueError(
+            f"Price data for {currency_code} is missing required columns: "
+            f"{missing_columns_text}"
+        )
 
 
 def get_price_data(
@@ -82,17 +151,19 @@ def get_price_data(
 
     # Construct the base API url with configurable API version
     base_url = "https://prices.azure.com/api/retail/prices"
-    api_url = f"{base_url}?api-version={API_VERSION}&currencyCode='{currency_code}''"
-
-    # Add optional filter argument
-    if results_filter:
-        api_url = f"{api_url}&{results_filter}"
+    initial_request_params = _build_initial_request_params(
+        currency_code, results_filter
+    )
 
     sku_list: list[dict[str, Any]] = []
 
-    next_page_link: str | None = api_url
+    next_page_link: str | None = base_url
+    request_params: dict[str, str] | None = initial_request_params
 
-    logger.info("Starting export for API call: %s", api_url)
+    prepared_request = requests.Request(
+        "GET", base_url, params=initial_request_params
+    ).prepare()
+    logger.info("Starting export for API call: %s", prepared_request.url)
     page_counter = 0
 
     # Create progress counter only if we have a proper terminal
@@ -109,7 +180,9 @@ def get_price_data(
 
         try:
             # Get the next page with timeout and error handling
-            api_request = session.get(next_page_link, timeout=REQUEST_TIMEOUT)
+            api_request = session.get(
+                next_page_link, params=request_params, timeout=REQUEST_TIMEOUT
+            )
             api_request.raise_for_status()  # Raise exception for HTTP errors
             result_json = api_request.json()
         except requests.RequestException as e:
@@ -119,11 +192,13 @@ def get_price_data(
             logger.error("Failed to parse JSON response: %s", e)
             raise
 
+        items, next_page_link = _extract_page_data(result_json, page_counter)
+
         # Convert JSON results to list of dictionaries for pandas
-        for sku_item in result_json["Items"]:
+        for sku_item in items:
             sku_list.append(sku_item)
 
-        next_page_link = result_json.get("NextPageLink")
+        request_params = None
         if counter:
             counter.update()  # pyright: ignore[reportUnknownMemberType]
 
@@ -219,8 +294,9 @@ def calculate_fx_rates(
 
     # Check if we have data
     if len(base_df) == 0:
-        logger.warning("No prices found for base currency %s", base_currency)
-        return pd.DataFrame({"currency": [], "fxRate": []})
+        raise ValueError(f"No prices found for base currency {base_currency}")
+
+    _ensure_required_price_columns(base_df, base_currency)
 
     # Use a unique key to match products across currencies
     # We'll use a combination of fields that should uniquely identify a product
@@ -235,74 +311,65 @@ def calculate_fx_rates(
     fx_results: list[dict[str, Any]] = []
 
     for target_currency in target_currencies:
-        try:
-            logger.info("Fetching %s prices...", target_currency)
-            target_df = get_prices(
-                currency_code=target_currency,
-                results_filter=results_filter,
-                max_pages=max_pages,
-            )
+        logger.info("Fetching %s prices...", target_currency)
+        target_df = get_prices(
+            currency_code=target_currency,
+            results_filter=results_filter,
+            max_pages=max_pages,
+        )
 
-            # Check if we have data for target currency
-            if len(target_df) == 0:
-                logger.warning("No prices found for currency %s", target_currency)
-                continue
+        if len(target_df) == 0:
+            raise ValueError(f"No prices found for target currency {target_currency}")
 
-            # Create match key for target currency
-            target_df["matchKey"] = (
-                target_df["armSkuName"].astype(str)
-                + "|"
-                + target_df["armRegionName"].astype(str)
-                + "|"
-                + target_df["meterId"].astype(str)
-            )
+        _ensure_required_price_columns(target_df, target_currency)
 
-            # Merge on the match key to find common products
-            merged_df = base_df.merge(
-                target_df,
-                on="matchKey",
-                suffixes=("_base", "_target"),
-                how="inner",
-            )
+        # Create match key for target currency
+        target_df["matchKey"] = (
+            target_df["armSkuName"].astype(str)
+            + "|"
+            + target_df["armRegionName"].astype(str)
+            + "|"
+            + target_df["meterId"].astype(str)
+        )
 
-            if len(merged_df) > 0:
-                # Filter out records where either price is zero or null
-                valid_df = merged_df[
-                    (merged_df["retailPrice_base"] > 0)
-                    & (merged_df["retailPrice_target"] > 0)
-                    & (merged_df["retailPrice_base"].notna())
-                    & (merged_df["retailPrice_target"].notna())
-                ]
+        # Merge on the match key to find common products
+        merged_df = base_df.merge(
+            target_df,
+            on="matchKey",
+            suffixes=("_base", "_target"),
+            how="inner",
+        )
 
-                if len(valid_df) > 0:
-                    # Use first matched product - FX rates are the same across all products
-                    first_row = valid_df.iloc[0]
-                    fx_rate = (
-                        first_row["retailPrice_target"] / first_row["retailPrice_base"]
-                    )
+        if len(merged_df) == 0:
+            raise ValueError(f"No matching products found for {target_currency}")
 
-                    fx_results.append(
-                        {
-                            "currency": target_currency,
-                            "fxRate": fx_rate,
-                        }
-                    )
+        # Filter out records where either price is zero or null
+        valid_df = merged_df[
+            (merged_df["retailPrice_base"] > 0)
+            & (merged_df["retailPrice_target"] > 0)
+            & (merged_df["retailPrice_base"].notna())
+            & (merged_df["retailPrice_target"].notna())
+        ]
 
-                    logger.info(
-                        "Calculated FX rate for %s: %.4f",
-                        target_currency,
-                        fx_rate,
-                    )
-                else:
-                    logger.warning(
-                        "No valid price comparisons found for %s", target_currency
-                    )
-            else:
-                logger.warning("No matching products found for %s", target_currency)
+        if len(valid_df) == 0:
+            raise ValueError(f"No valid price comparisons found for {target_currency}")
 
-        except Exception as e:
-            logger.error("Failed to calculate FX rate for %s: %s", target_currency, e)
-            continue
+        # Use first matched product - FX rates are the same across all products
+        first_row = valid_df.iloc[0]
+        fx_rate = first_row["retailPrice_target"] / first_row["retailPrice_base"]
+
+        fx_results.append(
+            {
+                "currency": target_currency,
+                "fxRate": fx_rate,
+            }
+        )
+
+        logger.info(
+            "Calculated FX rate for %s: %.4f",
+            target_currency,
+            fx_rate,
+        )
 
     # Create DataFrame from results
     fx_df = pd.DataFrame.from_records(fx_results)
