@@ -367,6 +367,6 @@ Use the exported Azure pricing CSV files with AI assistants like GitHub Copilot,
 
 **Example**: *"Create a PivotTable showing Azure VM prices by region, sorted by cost"*
 
-[![VS Code Extension](https://img.shields.io/visual-studio-marketplace/v/sbroenne.excel-mcp)](https://marketplace.visualstudio.com/items?itemName=sbroenne.excel-mcp)
+[![VS Code Extension](https://vsmarketplacebadges.dev/version-short/sbroenne.excel-mcp.svg)](https://marketplace.visualstudio.com/items?itemName=sbroenne.excel-mcp)
 
 [Learn more →](https://github.com/sbroenne/mcp-server-excel/)
