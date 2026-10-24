@@ -5,9 +5,10 @@ This module provides functions to fetch and process Azure retail pricing data.
 
 import logging
 import os
+from collections import Counter
 from datetime import timedelta
 from typing import Any, cast
-from urllib.parse import parse_qsl
+from urllib.parse import parse_qsl, urlsplit
 
 import enlighten  # pyright: ignore[reportMissingTypeStubs]
 import pandas as pd
@@ -28,6 +29,7 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 RETRY_BACKOFF_FACTOR = float(os.getenv("RETRY_BACKOFF_FACTOR", "2.0"))
 RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]  # HTTP status codes to retry
+MAX_API_SKIP = 1_000_000
 FX_PRICE_IDENTITY = [
     "skuId",
     "armRegionName",
@@ -95,6 +97,57 @@ def _extract_page_data(
     return items, next_page_link
 
 
+def _partition_price_query(
+    params: dict[str, str], records: list[dict[str, Any]]
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Split an overflowing query into disjoint, exhaustive equality filters."""
+    if int(params.get("$skip", "0") or "0") != 0:
+        raise ValueError("Cannot safely partition a query with an initial $skip")
+    best: tuple[int, str, list[str]] | None = None
+    for field in (
+        "serviceFamily",
+        "serviceName",
+        "armRegionName",
+        "productId",
+        "skuId",
+        "meterId",
+    ):
+        counts: Counter[str] = Counter()
+        for record in records:
+            value = record.get(field)
+            if isinstance(value, str):
+                counts[value] += 1
+        values = []
+        matches = 0
+        for value, count in counts.most_common(16):
+            values.append(value)
+            matches += count
+            if 0 < matches < len(records):
+                imbalance = abs(len(records) - 2 * matches)
+                if best is None or imbalance < best[0]:
+                    best = imbalance, field, values.copy()
+            if matches * 2 >= len(records):
+                break
+        if best is not None and best[0] == 0:
+            break
+    if best is None:
+        raise ValueError("Cannot safely partition prices at the Azure pagination limit")
+
+    _, field, values = best
+    escaped = [value.replace("'", "''") for value in values]
+    positive = " or ".join(f"{field} eq '{value}'" for value in escaped)
+    negative = " and ".join(f"{field} ne '{value}'" for value in escaped)
+    original = params.get("$filter", "")
+    partitions = []
+    for condition in (positive, negative):
+        partition = params.copy()
+        partition["$filter"] = (
+            f"({original}) and ({condition})" if original else condition
+        )
+        partitions.append(partition)
+    return partitions[0], partitions[1]
+
+
 # Module-level cached session (lazily initialized to enable test patching)
 _session: requests.Session | None = None
 
@@ -141,7 +194,11 @@ def _get_session() -> requests.Session:
 def get_price_data(
     currency_code: str, results_filter: str = "", max_pages: int = 9999999
 ) -> list[dict[str, Any]]:
-    """Download price data from the Azure Retail Price API
+    """Download prices, partitioning queries that reach Azure's pagination limit.
+
+    An overflowing query is restarted as complementary filtered queries; its
+    partial pages are discarded so rows are neither duplicated nor truncated.
+    The max_pages budget covers requests across all partitions.
 
     Args:
         currency_code (str): Price currency
@@ -163,11 +220,6 @@ def get_price_data(
         currency_code, results_filter
     )
 
-    sku_list: list[dict[str, Any]] = []
-
-    next_page_link: str | None = base_url
-    request_params: dict[str, str] | None = initial_request_params
-
     prepared_request = requests.Request(
         "GET", base_url, params=initial_request_params
     ).prepare()
@@ -182,36 +234,50 @@ def get_price_data(
         # Fall back to no progress bar in test environments
         logger.debug("Progress bar not available, continuing without it")
 
-    # Loop through the result pages
-    while next_page_link and page_counter < max_pages:
-        page_counter += 1
+    def fetch(params: dict[str, str]) -> list[dict[str, Any]]:
+        nonlocal page_counter
+        records: list[dict[str, Any]] = []
+        next_page_link: str | None = base_url
+        request_params: dict[str, str] | None = params
+        while next_page_link and page_counter < max_pages:
+            skip = dict(parse_qsl(urlsplit(next_page_link).query)).get("$skip", "0")
+            if int(skip) >= MAX_API_SKIP:
+                left, right = _partition_price_query(params, records)
+                logger.info(
+                    "Restarting overflowing price query as partitions: %s / %s",
+                    left["$filter"],
+                    right["$filter"],
+                )
+                records.clear()
+                records.extend(fetch(left))
+                records.extend(fetch(right))
+                return records
+            page_counter += 1
+            try:
+                response = session.get(
+                    next_page_link, params=request_params, timeout=REQUEST_TIMEOUT
+                )
+                response.raise_for_status()
+                result_json = response.json()
+            except requests.RequestException as error:
+                logger.error("API request failed for page %d: %s", page_counter, error)
+                raise
+            except ValueError as error:
+                logger.error("Failed to parse JSON response: %s", error)
+                raise
+            items, next_page_link = _extract_page_data(result_json, page_counter)
+            records.extend(items)
+            request_params = None
+            if counter:
+                counter.update()
+        return records
 
-        try:
-            # Get the next page with timeout and error handling
-            api_request = session.get(
-                next_page_link, params=request_params, timeout=REQUEST_TIMEOUT
-            )
-            api_request.raise_for_status()  # Raise exception for HTTP errors
-            result_json = api_request.json()
-        except requests.RequestException as e:
-            logger.error("API request failed for page %d: %s", page_counter, e)
-            raise
-        except ValueError as e:
-            logger.error("Failed to parse JSON response: %s", e)
-            raise
-
-        items, next_page_link = _extract_page_data(result_json, page_counter)
-
-        # Convert JSON results to list of dictionaries for pandas
-        for sku_item in items:
-            sku_list.append(sku_item)
-
-        request_params = None
+    try:
+        sku_list = fetch(initial_request_params)
+    finally:
         if counter:
-            counter.update()  # pyright: ignore[reportUnknownMemberType]
-
+            counter.close()
     logger.info("Completed export of %d result pages", page_counter)
-
     return sku_list
 
 

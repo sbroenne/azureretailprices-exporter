@@ -20,7 +20,7 @@
 
 ## High-level architecture
 - `api/azureapi.py` is the core API client. It fetches paginated Azure Retail Prices with caching and retry logic, then exposes:
-  - `get_price_data(...)` → list[dict] raw items from the API.
+  - `get_price_data(...)` → list[dict] raw items from the API. At Azure's skip limit, restart with complementary adaptive filters, discard partial pages, and retain one global page budget.
   - `get_prices(...)` → DataFrame retaining each parent price and adding separate Savings Plan rows without mutating API records.
   - `calculate_fx_rates(...)` → DataFrame of FX rates matched by SKU ID, region, meter, type, term, tier, and unit. Missing or ambiguous currency results fail rather than returning partial data.
 - `export_*.py` scripts are thin wrappers around `api.azureapi` that export CSV/JSON for specific use cases (all prices, VM-only, FX rates, etc.).

@@ -37,6 +37,7 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
     - [Available Export Scripts](#available-export-scripts)
   - [Configuration](#configuration)
   - [Code Layout](#code-layout)
+    - [Large Catalog Pagination](#large-catalog-pagination)
   - [Caching](#caching)
   - [Error Handling](#error-handling)
   - [Development](#development)
@@ -96,8 +97,9 @@ The verified live API example has a USD/hour PAYG price of `0.096`, plus
 `0.0658368` for `1 Year` and `0.0441792` for `3 Years`; those live values
 do not establish the missing historical PAYG price.
 
-The fix applies to exports generated with the corrected code. Published releases
-are not rewritten or backfilled. A missing historical PAYG row is not evidence
+The fix applies to exports generated with the corrected code. Historical CSV
+assets are not rewritten or backfilled; release titles and notes can flag
+incomplete coverage. A missing historical PAYG row is not evidence
 of unavailability or a zero price, and current prices cannot reconstruct it.
 
 ## Prerequisites
@@ -283,6 +285,21 @@ azureretailprices-exporter/
 
 **Core functionality** is in `api/azureapi.py`. The `export_*.py` scripts are examples showing different usage patterns.
 
+### Large Catalog Pagination
+
+Azure rejects pagination links with `$skip=1000000`. When a query reaches that
+boundary, the client discards its partial pages and restarts it as complementary
+`eq`/`ne` filters based on observed service, region, or product identities.
+Partitions can split again if necessary. This covers the original query without
+assuming a fixed service/region catalog or duplicating the discarded pages.
+Failed or unsplittable partitions raise an error rather than return a truncated
+full export. Queries with an explicit initial `$skip` cannot be safely partitioned
+and fail at that boundary.
+
+`max_pages` remains a total request budget across partition restarts. Deliberately
+bounded debug exports can return only a subset; release exports use the default
+full-catalog budget.
+
 ## Caching
 
 The script uses [requests-cache](https://pypi.org/project/requests-cache) to temporarily cache API results. This is useful if the script stops unexpectedly and you need to resume later.
@@ -332,6 +349,10 @@ The project includes VS Code configuration for optimal development experience:
 ```console
 uv run pytest
 ```
+
+Live smoke tests are opt-in. Set `RUN_LIVE_AZURE_TESTS=1` in your environment,
+then run `uv run pytest -m live`. Their API fetches are limited to one page;
+normal tests do not contact Azure.
 
 ### Adding Dependencies
 

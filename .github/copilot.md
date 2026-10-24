@@ -127,7 +127,7 @@ azureretailprices-exporter/
 
 ### API Integration
 - Base URL: Azure Retail Prices API
-- Supports pagination via `nextLink`
+- Supports pagination via `NextPageLink`; overflowing queries restart with complementary adaptive filters rather than truncate at Azure's skip limit
 - Implements request caching with `requests_cache`
 - Handles timeouts and retries
 
