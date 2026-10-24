@@ -2,10 +2,18 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "uv: Sync Dependencies",
+            "label": "uv: Create Virtual Environment",
             "type": "shell",
             "command": "uv",
-            "args": ["sync"],
+            "args": ["venv", "--allow-existing"],
+            "problemMatcher": []
+        },
+        {
+            "label": "uv: Install Dependencies",
+            "type": "shell",
+            "command": "uv",
+            "args": ["pip", "sync", "--require-hashes", "requirements-dev.txt"],
+            "dependsOn": "uv: Create Virtual Environment",
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -16,10 +24,11 @@
             "problemMatcher": []
         },
         {
-            "label": "uv: Add Dependency",
+            "label": "uv: Compile Runtime Requirements",
             "type": "shell",
             "command": "uv",
-            "args": ["add", "${input:packageName}"],
+            "args": ["pip", "compile", "pyproject.toml", "--universal", "--python", ".venv", "--python-version", "3.10", "--generate-hashes", "--no-header", "--output-file", "requirements.txt"],
+            "dependsOn": "uv: Create Virtual Environment",
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -30,10 +39,11 @@
             "problemMatcher": []
         },
         {
-            "label": "uv: Update Dependencies",
+            "label": "uv: Compile Dependency Locks",
             "type": "shell",
             "command": "uv",
-            "args": ["lock", "--upgrade"],
+            "args": ["pip", "compile", "pyproject.toml", "--extra", "dev", "--universal", "--python", ".venv", "--python-version", "3.10", "--generate-hashes", "--no-header", "--constraint", "requirements.txt", "--output-file", "requirements-dev.txt"],
+            "dependsOn": "uv: Compile Runtime Requirements",
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -61,7 +71,7 @@
             "label": "Format Code (Ruff)",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "ruff", "format", "api/", "export_prices_*.py"],
+            "args": ["run", "ruff", "format", "."],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -75,7 +85,7 @@
             "label": "Lint Code (Ruff)",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "ruff", "check", "api/", "export_prices_*.py"],
+            "args": ["run", "ruff", "check", "."],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -102,7 +112,7 @@
             "label": "Fix Code (Ruff)",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "ruff", "check", "--fix", "api/", "export_prices_*.py"],
+            "args": ["run", "ruff", "check", "--fix", "."],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -111,14 +121,6 @@
                 "panel": "shared"
             },
             "problemMatcher": []
-        }
-    ],
-    "inputs": [
-        {
-            "id": "packageName",
-            "description": "Package name to add",
-            "default": "",
-            "type": "promptString"
         }
     ]
 }

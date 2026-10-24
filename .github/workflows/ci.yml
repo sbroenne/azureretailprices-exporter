@@ -27,14 +27,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Install uv
+    - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "latest"
         enable-cache: true
+        cache-dependency-glob: requirements*.txt
 
     - name: Install dependencies
-      run: uv sync
+      run: |
+        uv venv --python "${{ matrix.python-version }}"
+        uv pip sync --require-hashes requirements-dev.txt
 
     - name: Run tests with pytest
       run: |

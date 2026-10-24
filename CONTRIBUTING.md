@@ -41,18 +41,46 @@ This project adheres to a Code of Conduct that all contributors are expected to 
 
 4. **Install uv** (if not already installed):
    ```bash
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+   pip install uv
    ```
 
 5. **Install dependencies**:
    ```bash
-   uv sync
+   uv venv
+   uv pip sync --require-hashes requirements-dev.txt
    ```
 
-6. **Run commands through uv**:
+6. **Run commands in the virtual environment** (no activation required):
    ```bash
-   uv run pytest
+   uv run python --version
    ```
+
+The requirements files pin versions and hashes, not package-index URLs.
+`requirements-dev.txt` includes the runtime dependencies and development tools.
+Use `uv pip sync --require-hashes requirements.txt` for a runtime-only environment.
+Automatic project locking and syncing are disabled (`managed = false`), so
+`uv run` uses the existing `.venv` without creating `uv.lock`.
+
+To change dependencies, edit `project.dependencies` or
+`project.optional-dependencies.dev` in `pyproject.toml`, then run:
+
+```console
+uv pip compile pyproject.toml --universal --python .venv --python-version 3.10 --generate-hashes --no-header --output-file requirements.txt
+uv pip compile pyproject.toml --extra dev --universal --python .venv --python-version 3.10 --generate-hashes --no-header --constraint requirements.txt --output-file requirements-dev.txt
+uv pip sync --require-hashes requirements-dev.txt
+```
+
+Add `--upgrade` to both compile commands to upgrade dependencies. Universal
+resolution covers Python 3.10+ while `--python .venv` uses the existing interpreter
+for metadata. Commit both generated requirements files and `pyproject.toml`;
+do not edit the locks manually or use `uv add`, `uv lock`, or `uv sync`.
+CI regenerates the locks and rejects changes; dependency installation verifies hashes.
+
+Keep package-index overrides and authentication in your existing user or machine
+configuration, not in this repository. Tests mock Azure and GitHub requests;
+retry tests use a local HTTP server and never contact Azure.
+Release tests exercise `publish_releases.py` with a mocked GitHub CLI and must
+not modify published releases.
 
 ### VS Code Setup (Recommended)
 
@@ -178,15 +206,14 @@ uv run ruff format .
 
 - **Python 3.10+** syntax (modern union types, etc.)
 - **Type hints** for all functions and methods
-- **Ruff** for code formatting (line length: 88)
-- **Ruff** for linting
+- **Ruff** for code formatting (line length: 88) and linting
 - **Structured logging** instead of print statements
 
 ### Code Quality Tools
 
 The project uses the following tools to maintain code quality:
 
-- **[Ruff](https://docs.astral.sh/ruff/)** - Linter and formatter
+- **[Ruff](https://docs.astral.sh/ruff/)** - Fast Python formatter and linter
 - **[Pyright](https://github.com/microsoft/pyright)** - Type checker (optional)
 - **[pytest](https://pytest.org/)** - Testing framework
 
@@ -204,7 +231,7 @@ The project uses the following tools to maintain code quality:
 Format your code with Ruff before committing:
 
 ```bash
-uv run ruff format api/ export_prices_*.py
+uv run ruff format .
 ```
 
 ### Linting
