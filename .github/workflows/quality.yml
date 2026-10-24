@@ -23,14 +23,22 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install uv
+    - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "latest"
         enable-cache: true
+        cache-dependency-glob: requirements*.txt
 
     - name: Install dependencies
-      run: uv sync
+      run: |
+        uv venv --python 3.11
+        uv pip sync --require-hashes requirements-dev.txt
+
+    - name: Check dependency locks
+      run: |
+        uv pip compile pyproject.toml --universal --python .venv --python-version 3.10 --generate-hashes --no-header --output-file requirements.txt > /dev/null
+        uv pip compile pyproject.toml --extra dev --universal --python .venv --python-version 3.10 --generate-hashes --no-header --constraint requirements.txt --output-file requirements-dev.txt > /dev/null
+        git diff --exit-code -- requirements.txt requirements-dev.txt
 
     - name: Run linting with Ruff
       run: |
@@ -56,14 +64,16 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Install uv
+    - name: Set up uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "latest"
         enable-cache: true
+        cache-dependency-glob: requirements*.txt
 
     - name: Install dependencies
-      run: uv sync
+      run: |
+        uv venv --python 3.11
+        uv pip sync --require-hashes requirements-dev.txt
 
     - name: Test with pytest and generate coverage
       run: |

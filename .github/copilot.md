@@ -31,7 +31,7 @@ This is a **modern Python project** that retrieves Azure Retail Prices from the 
 
 ### Code Formatting
 - **Ruff** is the code formatter (line-length: 88)
-- Format code with: `uv run ruff format api/ export_prices_*.py`
+- Format code with: `uv run ruff format .`
 - All code must pass Ruff formatting checks
 
 ### Linting
@@ -66,8 +66,9 @@ azureretailprices-exporter/
 │   └── tests/               # Unit tests
 │       └── test_azureapi.py
 ├── export_*.py              # Example export scripts
-├── pyproject.toml           # Project dependencies and config
-├── uv.lock                  # Locked dependency versions
+├── pyproject.toml           # uv dependencies and config
+├── requirements.txt         # Hashed runtime dependency lock
+├── requirements-dev.txt     # Hashed development dependency lock
 └── .vscode/                 # VS Code configuration
 ```
 
@@ -78,20 +79,22 @@ azureretailprices-exporter/
 - **requests** - HTTP library for API calls
 - **requests-cache** - Caching requests to the API (1-day default)
 - **enlighten** - Progress bars and status display
-- **pyarrow** - Efficient data processing
 - **numpy** - Numerical computing support
 
 ### Development Dependencies
 - **pytest** - Testing framework
-- **ruff** - Linter and formatter
-- **ruff** - Linter
+- **ruff** - Code formatter and linter
 - **pyright** - Type checker (added as needed)
 
 ### Managing Dependencies
-- Add production dependency: `uv add package-name`
-- Add dev dependency: `uv add --dev package-name`
-- Install all dependencies: `uv sync`
-- Use `uv run <cmd>` for execution (no activation required)
+- Edit `project.dependencies` or `project.optional-dependencies.dev` in `pyproject.toml`, then regenerate both locks using the commands below
+- Create the environment: `uv venv`
+- Install all dependencies: `uv pip sync --require-hashes requirements-dev.txt`
+- Install runtime dependencies only: `uv pip sync --require-hashes requirements.txt`
+- Run in the existing environment (no activation required): `uv run python`
+- Keep `managed = false`; do not introduce `uv.lock` or use `uv add`, `uv lock`, or `uv sync`
+- Commit both hashed requirements files alongside dependency changes; CI regenerates them and installs with hash verification
+- Respect existing user/machine package-index configuration; do not add project-specific index URLs or credentials
 
 ## Testing
 
@@ -108,8 +111,12 @@ azureretailprices-exporter/
 ### Testing Best Practices
 - Write unit tests for all new functions
 - Mock external API calls in tests
+- Exercise retries with the real HTTP adapter against a local test server
+- Never accept production failures in tests by swallowing exceptions
 - Test error handling and edge cases
 - Use descriptive test names
+- FX matching must include SKU, region, meter, type, term, tier, and unit
+- Required FX failures must stop exports; do not publish partial currency sets
 
 ## Configuration
 
@@ -150,10 +157,10 @@ All workflows are in `.github/workflows/`:
 ### Contributing Requirements
 Before submitting a pull request, ensure code passes all checks:
 ```console
-uv run pytest                    # Run tests
-uv run ruff check .              # Check linting
-uv run ruff format --check .           # Check formatting
-uv run pyright                   # Type checking (optional)
+uv run pytest                       # Run tests
+uv run ruff check .                 # Check linting
+uv run ruff format --check .         # Check formatting
+uv run pyright                      # Type checking (optional)
 ```
 
 ### Branch Strategy
@@ -165,17 +172,15 @@ uv run pyright                   # Type checking (optional)
 ### Function Signatures
 ```python
 def get_price_data(
-    currency_code: str, 
-    results_filter: str = "", 
-    max_pages: int = 9999999
+    currency_code: str, results_filter: str = "", max_pages: int = 9999999
 ) -> list[dict[str, Any]]:
     """Download price data from the Azure Retail Price API
-    
+
     Args:
         currency_code: Price currency (e.g., 'USD', 'EUR')
         results_filter: Filter results string (optional)
         max_pages: Maximum pages to download (default: 9999999)
-    
+
     Returns:
         Retail prices as a list of dictionaries
     """
@@ -184,6 +189,7 @@ def get_price_data(
 ### Type Hints
 ```python
 from typing import Any, cast
+
 
 # Modern union syntax (Python 3.10+)
 def process_data(data: dict[str, Any] | None) -> str | None:
@@ -226,15 +232,15 @@ uv run python export_prices_vm_usd.py
 
 ### Formatting and Linting
 ```console
-uv run ruff format .                   # Format all files
-uv run ruff check --fix .        # Fix linting issues
-uv run ruff check .              # Check for issues
+uv run ruff format .                 # Format all files
+uv run ruff check --fix .             # Fix linting issues
+uv run ruff check .                  # Check for issues
 ```
 
 ### Testing
 ```console
-uv run pytest                    # Run all tests
-uv run pytest -v                 # Verbose output
+uv run pytest                       # Run all tests
+uv run pytest -v                    # Verbose output
 uv run pytest api/tests/test_azureapi.py  # Run specific test file
 ```
 
@@ -264,7 +270,7 @@ uv run pytest api/tests/test_azureapi.py  # Run specific test file
 - **Caching** - API responses are cached for 1 day by default
 - **Pagination** - Handle large result sets efficiently
 - **Progress bars** - Use enlighten for long-running operations
-- **Data processing** - Use pandas and pyarrow for efficient data manipulation
+- **Data processing** - Use pandas and numpy for efficient data manipulation
 
 ## Workflow Guidance for Copilot
 
@@ -343,7 +349,7 @@ Before marking work as complete, verify:
 6. ❌ Don't commit commented-out code
 7. ❌ Don't make breaking changes without discussion
 8. ❌ Don't ignore error handling for external calls
-9. ❌ Don't commit generated files (check `.gitignore`)
+9. ❌ Don't commit unrelated generated files; hashed requirements locks are intentional
 10. ❌ Don't commit cache files (`azure_cache.sqlite`)
 11. ❌ Don't commit CSV export files (unless they're test fixtures)
 12. ❌ Don't commit virtual environment files (`.venv/`, `venv/`)
@@ -363,21 +369,22 @@ When working on multiple issues or feedback items:
 
 ### Setup and Installation
 ```bash
-uv sync                     # Install all dependencies
-# Use `uv run <cmd>` for execution (no activation required)
+uv venv                            # Create the environment
+uv pip sync --require-hashes requirements-dev.txt  # Install dependencies and dev tools
+uv run python                      # Run Python in the existing environment
 ```
 
 ### Running Tests and Quality Checks
 ```bash
 # Run all quality checks (do this before submitting PR)
-uv run pytest                  # Tests
+uv run pytest                       # Tests
 uv run ruff format --check .         # Formatting check
-uv run ruff check .            # Linting check
-uv run pyright                 # Type checking (optional)
+uv run ruff check .                 # Linting check
+uv run pyright                      # Type checking (optional)
 
 # Auto-fix issues
 uv run ruff format .                 # Format code
-uv run ruff check --fix .      # Fix auto-fixable linting issues
+uv run ruff check --fix .             # Fix auto-fixable linting issues
 ```
 
 ### Running Export Scripts
@@ -388,11 +395,15 @@ uv run python export_prices_vm_usd.py
 
 ### Managing Dependencies
 ```bash
-uv add package-name              # Add production dependency
-uv add --dev package-name  # Add development dependency
-uv lock --upgrade                 # Update dependencies
-uv pip list                       # List installed packages
+uv pip compile pyproject.toml --universal --python .venv --python-version 3.10 --generate-hashes --no-header --output-file requirements.txt
+uv pip compile pyproject.toml --extra dev --universal --python .venv --python-version 3.10 --generate-hashes --no-header --constraint requirements.txt --output-file requirements-dev.txt
+uv pip sync --require-hashes requirements-dev.txt
+uv pip tree                         # Show the installed dependency tree
 ```
+
+Add `--upgrade` to both compile commands to upgrade pinned versions. Keep the
+Python 3.10 resolution minimum; `--python .venv` uses the existing interpreter
+for metadata.
 
 ### Git Workflow
 ```bash

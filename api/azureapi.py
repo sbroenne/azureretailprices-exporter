@@ -28,7 +28,15 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "30"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 RETRY_BACKOFF_FACTOR = float(os.getenv("RETRY_BACKOFF_FACTOR", "2.0"))
 RETRY_STATUS_FORCELIST = [429, 500, 502, 503, 504]  # HTTP status codes to retry
-REQUIRED_PRICE_COLUMNS = {"armSkuName", "armRegionName", "meterId", "retailPrice"}
+FX_PRICE_IDENTITY = [
+    "skuId",
+    "armRegionName",
+    "meterId",
+    "type",
+    "reservationTerm",
+    "tierMinimumUnits",
+    "unitOfMeasure",
+]
 
 
 def _build_initial_request_params(
@@ -87,17 +95,6 @@ def _extract_page_data(
     return items, next_page_link
 
 
-def _ensure_required_price_columns(price_df: pd.DataFrame, currency_code: str) -> None:
-    """Ensure price data contains the columns required for FX calculations."""
-    missing_columns = sorted(REQUIRED_PRICE_COLUMNS.difference(price_df.columns))
-    if missing_columns:
-        missing_columns_text = ", ".join(missing_columns)
-        raise ValueError(
-            f"Price data for {currency_code} is missing required columns: "
-            f"{missing_columns_text}"
-        )
-
-
 # Module-level cached session (lazily initialized to enable test patching)
 _session: requests.Session | None = None
 
@@ -139,17 +136,6 @@ def _get_session() -> requests.Session:
             RETRY_STATUS_FORCELIST,
         )
     return _session
-
-
-def _create_match_key(df: pd.DataFrame) -> pd.Series:  # type: ignore[type-arg]
-    """Build a product match key from armSkuName, armRegionName, and meterId."""
-    return (
-        df["armSkuName"].astype(str)
-        + "|"
-        + df["armRegionName"].astype(str)
-        + "|"
-        + df["meterId"].astype(str)
-    )
 
 
 def get_price_data(
@@ -232,7 +218,12 @@ def get_price_data(
 def get_prices(
     currency_code: str, results_filter: str = "", max_pages: int = 9999999
 ) -> pd.DataFrame:
-    """Download prices from the Azure API and transform savingsPlan data
+    """Download prices, preserving parents and expanding savingsPlan data.
+
+    Each parent is retained without its nested savingsPlan field. Each plan
+    becomes an additional SavingsPlans row with its own prices and term.
+    Other fields, including dates, are copied from the parent; the input
+    records are not modified.
 
     Args:
         currency_code (str): Price currency
@@ -248,29 +239,59 @@ def get_prices(
         currency_code=currency_code, results_filter=results_filter, max_pages=max_pages
     )
 
-    # Transform the savingsPlan element and create a new dictionary
     output_records: list[dict[str, Any]] = []
 
     for input_record in input_records:
-        if "savingsPlan" in input_record:
-            # Transform the savingsPlans node
-            savingsPlans = input_record["savingsPlan"]
-            for sp_year in savingsPlans:
-                output_record = input_record.copy()
-                output_record["type"] = "SavingsPlans"
-                output_record["unitPrice"] = sp_year["unitPrice"]
-                output_record["retailPrice"] = sp_year["retailPrice"]
-                output_record["reservationTerm"] = sp_year["term"]
-                del output_record["savingsPlan"]
-                output_records.append(output_record)
-        else:
-            # Just append the original record
-            output_records.append(input_record)
+        parent_record = input_record.copy()
+        savings_plans = parent_record.pop("savingsPlan", [])
+        output_records.append(parent_record)
+
+        for savings_plan in savings_plans:
+            output_record = parent_record.copy()
+            output_record["type"] = "SavingsPlans"
+            output_record["unitPrice"] = savings_plan["unitPrice"]
+            output_record["retailPrice"] = savings_plan["retailPrice"]
+            output_record["reservationTerm"] = savings_plan["term"]
+            output_records.append(output_record)
 
     # pyright: ignore[reportUnknownMemberType]
     output_df = pd.DataFrame.from_records(output_records)
     logger.info("Created %d price items", output_df.shape[0])
     return output_df
+
+
+def _prepare_fx_prices(prices: pd.DataFrame, currency: str) -> pd.DataFrame:
+    required = set(FX_PRICE_IDENTITY) - {"reservationTerm"}
+    required.update({"currencyCode", "retailPrice"})
+    if prices.empty or not required.issubset(prices.columns):
+        raise ValueError(f"Missing price data or identity fields for {currency}")
+    if not prices["currencyCode"].eq(currency).all():
+        raise ValueError(f"Unexpected price currency when requesting {currency}")
+
+    prices = prices.copy()
+    if "reservationTerm" not in prices:
+        prices["reservationTerm"] = ""
+    else:
+        prices["reservationTerm"] = prices["reservationTerm"].fillna("")
+    if prices[FX_PRICE_IDENTITY].isna().to_numpy().any():
+        raise ValueError(f"Missing price identity values for {currency}")
+    if prices.duplicated(FX_PRICE_IDENTITY).any():
+        raise ValueError(f"Ambiguous price identities for {currency}")
+    prices["retailPrice"] = pd.to_numeric(prices["retailPrice"], errors="raise")
+    return prices
+
+
+def validate_fx_rates(fx_rates: pd.DataFrame, target_currencies: list[str]) -> None:
+    """Reject incomplete, duplicate, nonpositive, or nonfinite FX results."""
+    if list(fx_rates.columns) != ["currency", "fxRate"]:
+        raise ValueError("FX data must have currency and fxRate columns")
+    if fx_rates["currency"].duplicated().any() or set(fx_rates["currency"]) != set(
+        target_currencies
+    ):
+        raise ValueError("FX data does not contain exactly the required currencies")
+    rates = cast(pd.Series, pd.to_numeric(fx_rates["fxRate"], errors="raise"))
+    if not ((rates > 0) & (rates < float("inf"))).all():
+        raise ValueError("FX rates must be finite and positive")
 
 
 def calculate_fx_rates(
@@ -281,10 +302,10 @@ def calculate_fx_rates(
 ) -> pd.DataFrame:
     """Calculate FX rates by comparing prices across currencies.
 
-    This function fetches prices in multiple currencies and calculates exchange rates
-    by comparing the same product prices across currencies. The base currency (default USD)
-    is used as the reference. Since FX rates are the same across all products, only the
-    first matched product is used for calculation.
+    Match the same SKU, region, meter, price type, term, tier, and unit across
+    currencies. The first positive, finite matching price pair supplies the rate.
+    Missing data, ambiguous identities, and request failures stop the calculation;
+    partial results are never returned.
 
     Args:
         base_currency (str, optional): Base currency for FX rates. Defaults to "USD".
@@ -295,10 +316,18 @@ def calculate_fx_rates(
 
     Returns:
         pd.DataFrame: DataFrame with columns: currency, fxRate
+
+    Raises:
+        ValueError: Prices cannot be matched safely or a required rate is missing.
+        requests.RequestException: A price request fails.
     """
     if target_currencies is None:
         # Default list of common currencies
         target_currencies = ["EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR"]
+    if len(target_currencies) != len(set(target_currencies)):
+        raise ValueError("Target currencies must be unique")
+    if not target_currencies:
+        return pd.DataFrame(columns=["currency", "fxRate"])
 
     logger.info(
         "Calculating FX rates from %s to %s",
@@ -308,78 +337,49 @@ def calculate_fx_rates(
 
     # Get base currency prices
     logger.info("Fetching %s prices...", base_currency)
-    base_df = get_prices(
-        currency_code=base_currency,
-        results_filter=results_filter,
-        max_pages=max_pages,
+    base_df = _prepare_fx_prices(
+        get_prices(
+            currency_code=base_currency,
+            results_filter=results_filter,
+            max_pages=max_pages,
+        ),
+        base_currency,
     )
-
-    # Check if we have data
-    if len(base_df) == 0:
-        raise ValueError(f"No prices found for base currency {base_currency}")
-
-    _ensure_required_price_columns(base_df, base_currency)
-
-    # Use a unique key to match products across currencies
-    base_df["matchKey"] = _create_match_key(base_df)
 
     fx_results: list[dict[str, Any]] = []
 
     for target_currency in target_currencies:
         logger.info("Fetching %s prices...", target_currency)
-        target_df = get_prices(
-            currency_code=target_currency,
-            results_filter=results_filter,
-            max_pages=max_pages,
+        target_df = _prepare_fx_prices(
+            get_prices(
+                currency_code=target_currency,
+                results_filter=results_filter,
+                max_pages=max_pages,
+            ),
+            target_currency,
         )
-
-        if len(target_df) == 0:
-            raise ValueError(f"No prices found for target currency {target_currency}")
-
-        _ensure_required_price_columns(target_df, target_currency)
-        target_df["matchKey"] = _create_match_key(target_df)
-
-        # Merge on the match key to find common products
         merged_df = base_df.merge(
             target_df,
-            on="matchKey",
+            on=FX_PRICE_IDENTITY,
             suffixes=("_base", "_target"),
             how="inner",
+            validate="one_to_one",
         )
-
-        if len(merged_df) == 0:
-            raise ValueError(f"No matching products found for {target_currency}")
-
-        # Filter out records where either price is zero or null
         valid_df = merged_df[
             (merged_df["retailPrice_base"] > 0)
+            & (merged_df["retailPrice_base"] < float("inf"))
             & (merged_df["retailPrice_target"] > 0)
-            & (merged_df["retailPrice_base"].notna())
-            & (merged_df["retailPrice_target"].notna())
+            & (merged_df["retailPrice_target"] < float("inf"))
         ]
-
-        if len(valid_df) == 0:
-            raise ValueError(f"No valid price comparisons found for {target_currency}")
-
-        # Use first matched product - FX rates are the same across all products
+        if valid_df.empty:
+            raise ValueError(f"No positive matching prices for {target_currency}")
         first_row = valid_df.iloc[0]
         fx_rate = first_row["retailPrice_target"] / first_row["retailPrice_base"]
+        fx_results.append({"currency": target_currency, "fxRate": fx_rate})
+        logger.info("Calculated FX rate for %s: %.4f", target_currency, fx_rate)
 
-        fx_results.append(
-            {
-                "currency": target_currency,
-                "fxRate": fx_rate,
-            }
-        )
-
-        logger.info(
-            "Calculated FX rate for %s: %.4f",
-            target_currency,
-            fx_rate,
-        )
-
-    # Create DataFrame from results
-    fx_df = pd.DataFrame.from_records(fx_results)
+    fx_df = pd.DataFrame.from_records(fx_results, columns=["currency", "fxRate"])
+    validate_fx_rates(fx_df, target_currencies)
     logger.info("Calculated FX rates for %d currencies", len(fx_df))
 
     return fx_df

@@ -11,22 +11,23 @@ Export [Azure Retail Prices](https://docs.microsoft.com/en-us/rest/api/cost-mana
 
 **Want the latest Azure prices without running the code?**
 
-📥 **[Download Latest CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest)** - All Azure retail prices in USD + FX rates, updated daily!
+📥 **[Download Latest CSV](https://github.com/sbroenne/azureretailprices-exporter/releases/tag/latest)** - Daily USD price snapshots + FX rates; see [coverage limitations](#price-coverage-and-savings-plans).
 
 - ✅ **Automated daily exports** at 6 AM UTC
-- ✅ **Complete price data** for all Azure services
+- ✅ **Price data** for all Azure services (see [historical coverage limitations](#price-coverage-and-savings-plans))
 - ✅ **FX rates** calculated from USD to 16+ currencies
 - ✅ **CSV format** ready for Excel, Power BI, or analysis tools
 - ✅ **Public access** - no authentication required
 - ✅ **Two release types available**:
   - 📅 **Dated releases** (e.g., `prices-2025-10-12`) - Historical snapshots for specific dates
-  - 🔄 **Latest release** (`latest`) - Always contains the most current prices (auto-updated daily)
+  - 🔄 **Latest release** (`latest`) - Most recent successful export (scheduled daily)
 
 *Perfect for business analysis, cost planning, or research without needing to run the export scripts yourself!*
 
 - [azureretailprices-exporter](#azureretailprices-exporter)
   - [🚀 Quick Download - Daily Exports](#-quick-download---daily-exports)
   - [Functionality](#functionality)
+    - [Price Coverage and Savings Plans](#price-coverage-and-savings-plans)
   - [Prerequisites](#prerequisites)
     - [Installation with uv (Recommended)](#installation-with-uv-recommended)
     - [Alternative: Python without uv](#alternative-python-without-uv)
@@ -73,6 +74,32 @@ The project includes both **manual export scripts** for custom use cases and **a
 - ✅ **Production ready** - Comprehensive testing, linting, and CI/CD pipeline
 - ✅ **Developer friendly** - Full VS Code integration, uv dependency management
 
+### Price Coverage and Savings Plans
+
+`get_prices` retains each original price row, including `Consumption` (PAYG),
+without the nested `savingsPlan` field. Each nested plan becomes an additional
+`SavingsPlans` row with its own `unitPrice`, `retailPrice`, and `reservationTerm`
+(for example, `1 Year` or `3 Years`). Records without `savingsPlan`, or with an
+empty list, still produce their original row. Input records are not modified.
+
+Savings Plan rows inherit other metadata, including date fields such as
+`effectiveStartDate`, from the parent API record. These are not independently
+verified Savings Plan effective dates; this limits plan-specific historical
+interpretation, but does not establish that the dates are incorrect.
+
+**Historical coverage limitation:** Before this fix, records containing
+`savingsPlan` were replaced by their plan rows, omitting the parent PAYG row
+(even when the plan list was empty). For example, the `prices-2026-09-24` CSV
+contains only the two `SavingsPlans` rows for Standard_D2s_v5 Linux in `eastus`,
+SKU `DZH318Z08M9W/0061`, meter `36cc2454-47d7-517f-884f-be4d6b7efa55`.
+The verified live API example has a USD/hour PAYG price of `0.096`, plus
+`0.0658368` for `1 Year` and `0.0441792` for `3 Years`; those live values
+do not establish the missing historical PAYG price.
+
+The fix applies to exports generated with the corrected code. Published releases
+are not rewritten or backfilled. A missing historical PAYG row is not evidence
+of unavailability or a zero price, and current prices cannot reconstruct it.
+
 ## Prerequisites
 
 The script requires the following dependencies:
@@ -81,7 +108,6 @@ The script requires the following dependencies:
 - [requests](https://docs.python-requests.org/) - HTTP library for API calls
 - [requests-cache](https://pypi.org/project/requests-cache/) - Caching requests to the API
 - [enlighten](https://pypi.org/project/enlighten/) - Progress bars and status display
-- [pyarrow](https://arrow.apache.org/docs/python/) - Efficient data processing
 - [numpy](https://numpy.org/) - Numerical computing support
 
 **Python Version:** 3.10+ required
@@ -90,30 +116,58 @@ We recommend using **uv** for dependency management and virtual environments.
 
 ### Installation with uv (Recommended)
 
-1. Install [uv](https://docs.astral.sh/uv/) if you haven't already:
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you haven't already:
 
    ```console
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+   pip install uv
    ```
 
 2. Install dependencies and create the virtual environment:
 
    ```console
-   uv sync
+   uv venv
+   uv pip sync --require-hashes requirements-dev.txt
    ```
+
+3. Run commands inside the virtual environment (no activation required):
+
+   ```console
+   uv run python --version
+   ```
+
+`requirements-dev.txt` includes runtime dependencies and development tools.
+Use `uv pip sync --require-hashes requirements.txt` for a runtime-only environment.
+Both files pin versions and SHA-256 hashes without registry or artifact URLs, so
+each machine uses its configured package index. CI checks that regenerating the
+locks leaves them unchanged and verifies hashes when installing.
+
+`uv run` uses `.venv` without automatically locking or syncing this project
+(`managed = false` in `pyproject.toml`). After changing dependencies, regenerate
+both requirements files and explicitly sync the environment. Do not use
+`uv add`, `uv lock`, or `uv sync` for this workflow.
+
+Keep package-index overrides and authentication in your existing user or machine
+configuration, not in this repository.
 
 ### Alternative: Python without uv
 
 If you prefer not to use uv, you can install dependencies directly:
 
 ```console
-pip install pandas requests-cache enlighten pyarrow requests numpy
+python -m venv .venv
+```
+
+Activate it (`.\.venv\Scripts\Activate.ps1` in PowerShell or
+`source .venv/bin/activate` on POSIX), then install:
+
+```console
+python -m pip install --require-hashes -r requirements.txt
 ```
 
 For development dependencies:
 
 ```console
-pip install pytest ruff
+python -m pip install --require-hashes -r requirements-dev.txt
 ```
 
 ## Usage
@@ -161,8 +215,20 @@ This creates the file `fxrates_usd.csv` with calculated exchange rates for multi
 **How it works:**
 - Uses a specific meterId (`5daea80f-04ac-5385-86f0-b263d23becd2`) to ensure consistent price comparison across currencies
 - Fetches Azure prices in USD (base currency) and multiple target currencies for this specific meter
-- Calculates FX rates by comparing the same product's price in different currencies
+- Matches the same SKU ID, region, meter, price type, reservation/Savings Plan term, tier, and unit before comparing prices
+- Rejects missing or ambiguous price identities and uses a positive, finite matching price pair
+- Stops on any required currency failure instead of writing partial FX results
 - Exports results with currency and exchange rate
+
+The CLI validates that every requested currency occurs exactly once with a
+positive, finite rate before writing the CSV. Invalid results do not overwrite
+an existing output file. Use `--output PATH` to choose a different filename.
+The API helper returns the `currency,fxRate` schema for an explicitly empty
+target list; missing requested data raises an error rather than returning a
+headerless or partial result.
+
+Older FX exports used fewer price-identity fields and did not enforce complete
+currency coverage. These fixes do not revalidate or repair archived FX files.
 
 **Example output:**
 ```
@@ -205,8 +271,9 @@ azureretailprices-exporter/
 │   ├── azureapi.py          # Main API client
 │   └── tests/               # Unit tests
 ├── export_*.py              # Example export scripts
-├── pyproject.toml           # Project dependencies and configuration
-├── uv.lock                  # Locked dependency versions
+├── pyproject.toml           # uv dependencies and configuration
+├── requirements.txt         # Hashed runtime dependency lock
+├── requirements-dev.txt     # Hashed development dependency lock
 └── .vscode/                 # VS Code configuration
     ├── settings.json        # Python interpreter settings
     ├── launch.json          # Debug configurations
@@ -247,7 +314,72 @@ The codebase includes comprehensive error handling:
 
 ## Development
 
-Developer setup, tooling, and code quality workflows are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+### VS Code Setup
+
+The project includes VS Code configuration for optimal development experience:
+
+- **Python interpreter** automatically configured for uv virtual environment
+- **Debug configurations** for running export scripts
+- **Tasks** for common operations:
+  - uv dependency management
+  - Running tests with pytest
+  - Code formatting with Ruff
+  - Linting and fixing with Ruff
+- **Extensions** recommendations for Python development (Ruff, Pylance)
+
+### Running Tests
+
+```console
+uv run pytest
+```
+
+### Adding Dependencies
+
+Edit `project.dependencies` or `project.optional-dependencies.dev` in
+`pyproject.toml`, then regenerate the locks and sync:
+
+```console
+uv pip compile pyproject.toml --universal --python .venv --python-version 3.10 --generate-hashes --no-header --output-file requirements.txt
+uv pip compile pyproject.toml --extra dev --universal --python .venv --python-version 3.10 --generate-hashes --no-header --constraint requirements.txt --output-file requirements-dev.txt
+uv pip sync --require-hashes requirements-dev.txt
+```
+
+Add `--upgrade` to both compile commands to upgrade pinned versions. The
+development lock is constrained by the runtime lock to keep shared versions
+consistent. `--python-version 3.10` sets the supported minimum for universal
+resolution; `--python .venv` keeps metadata evaluation on the existing interpreter.
+Commit both generated files with `pyproject.toml`; do not edit the locks manually.
+
+### Code Quality
+
+The project uses modern Python development tools for code quality:
+
+- **[Ruff](https://docs.astral.sh/ruff/)** - Fast Python formatter and linter (replaces Black, flake8, isort, pyupgrade)
+- **Type hints** for better IDE support and static analysis
+- **Structured logging** for debugging and monitoring
+- **Comprehensive error handling** for robustness
+- **Environment-based configuration** for flexibility
+
+**Code Formatting:**
+
+```console
+uv run ruff format .    # Format all Python files
+```
+
+**Linting:**
+
+```console
+uv run ruff check .             # Check for linting issues
+uv run ruff check --fix .       # Auto-fix issues where possible
+```
+
+**VS Code Integration:**
+
+- Automatic formatting on save with Ruff
+- Real-time linting with Ruff
+- Code actions on save (organize imports, fix issues)
+
+The project follows **Python 3.10+** conventions including modern union syntax (`str | None` instead of `Optional[str]`).
 
 ## Continuous Integration
 
@@ -262,7 +394,7 @@ The project uses **GitHub Actions** for automated testing and code quality check
 ### 🔍 **Code Quality Enforcement**
 
 - **Linting**: Ruff checks for code quality and style
-- **Formatting**: Ruff enforces consistent code formatting
+- **Formatting**: Ruff ensures consistent code formatting
 - **Type Checking**: Pyright validates type annotations
 
 ### 🔒 **Security Scanning**
@@ -279,7 +411,30 @@ The badges at the top of this README show the current status of:
 - [![Code Quality](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/quality.yml) - Linting, formatting, and type checking
 - [![CodeQL](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/sbroenne/azureretailprices-exporter/actions/workflows/codeql-analysis.yml) - Security vulnerability scanning
 
-For contribution requirements and developer workflows, see [CONTRIBUTING.md](CONTRIBUTING.md).
+### 🔧 **Contributing Requirements**
+
+Before submitting a pull request, ensure your code passes all checks:
+
+```console
+# Run all quality checks locally
+uv run pytest                       # Run tests
+uv run ruff check .                 # Check linting
+uv run ruff format --check .         # Check formatting
+uv run pyright                      # Type checking (optional)
+```
+
+**Tip**: VS Code with the recommended extensions will automatically format and lint your code as you work!
+
+### 📝 **Contributing Guidelines**
+
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Setting up your development environment
+- Our development workflow
+- Pull request process
+- Coding standards and best practices
+
+Also review our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## Automated Exports
 
@@ -292,6 +447,15 @@ This project includes **fully automated daily exports** that make Azure pricing 
 - **Fresh Data**: Always pulls the latest pricing from Azure's official API
 - **Public Access**: Results are published as GitHub releases for easy download
 
+Exports are validated before publication. Empty or malformed price data and any
+missing required FX currency fail the job rather than publishing incomplete data.
+Publication uses `publish_releases.py`: existing dated archives are left untouched,
+and `latest` is updated in place instead of deleting the release. Rerunning a job
+after a partial publication can therefore retry `latest` without replacing the
+dated archive. New releases stay as drafts until both files have uploaded;
+interrupted drafts can be completed on retry. GitHub asset uploads to an existing
+`latest` release are not an atomic update of both CSV files.
+
 ### 📁 **Release Types Available**
 
 Each export creates **two separate releases**:
@@ -299,7 +463,7 @@ Each export creates **two separate releases**:
 #### 📅 **Dated Releases** (e.g., `prices-2025-10-12`)
 
 - **Files**: 
-  - `azure-retail-prices-usd.csv` - Complete price data
+  - `azure-retail-prices-usd.csv` - Price data (subject to the [historical coverage limitations](#price-coverage-and-savings-plans))
   - `azure-fxrates-usd.csv` - FX rates calculated from USD
 - **Purpose**: Permanent historical snapshot for that specific date
 - **Use Case**: Historical analysis, trend tracking, archival data
